@@ -9,9 +9,11 @@
 int currLine = 1, currPos = 1;
 %}
 
-LETTER [a-zA-Z]
-DIGIT [0-9]
-IDENTIFIER ({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT}))|{LETTER}
+LETTER      [a-zA-Z]
+DIGIT       [0-9]
+IDENTIFIER  ({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT}))|{LETTER}
+INVALIDID   ({DIGIT}+{IDENTIFIER})|({IDENTIFIER}"_"+)|({DIGIT}+{IDENTIFIER}?"_"+)
+COMMENT     "#""#"+.*
 
 %%
 
@@ -67,8 +69,9 @@ return		{ printf("RETURN\n"); currPos += yyleng; }
 
 {IDENTIFIER}	{ printf("IDENT %s\n", yytext); currPos += yyleng; }
 {DIGIT}+	{ printf("NUMBER %s\n", yytext); currPos += yyleng; }
+{INVALIDID} { printf("Error at line %d, column %d: invalid identifier \"%s\"\n", currLine, currPos, yytext); exit(0); }
 
-
+{COMMENT}   {/*ignore comment*/ currLine++; currPos = 1;}
 [ \t]+		{/*ignore whitespace*/ currPos += yyleng;}
 "\n"		{currLine++; currPos = 1;}
 .			{printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", currLine, currPos, yytext); exit(0);}
