@@ -1,63 +1,47 @@
+/*
+    Flex specification that recognizes tokens in the calculator language.
+    Prints out an error message and exits if any unrecognized character is
+    encountered in the input.
+    Prints the identified tokens to the screen, one token per line.
+*/
 
+%{
+int currLine = 1, currPos = 1;
+int numInt = 0, numOp = 0, numParen = 0, numEqual = 0;
+%}
 
-LETTER [a-zA-Z]
-DIGIT [0-9]
-IDENTIFIER ({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT}))|{LETTER}
+NUMBER           [0-9]+
+SIGNEDNUMBER     ("+"|"-")?{NUMBER}
+SCIENTIFICNUMBER {SIGNEDNUMBER}("."{NUMBER})?((E|e){SIGNEDNUMBER})?
 
 %%
 
-function	{ printf("FUNCTION\n"); }
-beginparams	{ printf("BEGIN_PARAMS\n"); }
-endparams	{ printf("END_PARAMS\n"); }
-beginlocals	{ printf("BEGIN_LOCALS\n"); }
-endlocals	{ printf("END_LOCALS\n"); }
-beginbody	{ printf("BEGIN_BODY\n"); }
-endbody		{ printf("END_BODY\n"); }
-integer		{ printf("INTEGER\n"); }
-array		{ printf("ARRAY\n"); }
-of		{ printf("OF\n"); }
-if		{ printf("IF\n"); }
-then		{ printf("THEN\n"); }
-endif		{ printf("ENDIF\n"); }
-else		{ printf("ELSE\n"); }
-while		{ printf("WHILE\n"); }
-do		{ printf("DO\n"); }
-beginloop	{ printf("BEGINLOOP\n"); }
-endloop		{ printf("ENDLOOP\n"); }
-continue	{ printf("CONTINUE\n"); }
-read		{ printf("READ\n"); }
-write		{ printf("WRITE\n"); }
-and		{ printf("AND\n"); }
-or		{ printf("OR\n"); }
-not		{ printf("NOT\n"); }
-true		{ printf("TRUE\n"); }
-false		{ printf("FALSE\n"); }
-return		{ printf("RETURN\n"); }
+"+" {printf("PLUS\n"); currPos += yyleng; numOp++;}
+"-" {printf("MINUS\n"); currPos += yyleng; numOp++;}
+"*" {printf("MULT\n"); currPos += yyleng; numOp++;}
+"/" {printf("DIV\n"); currPos += yyleng; numOp++;}
+"(" {printf("L_PAREN\n"); currPos += yyleng; numParen++;}
+")" {printf("R_PAREN\n"); currPos += yyleng; numParen++;}
+"=" {printf("EQUAL\n"); currPos += yyleng; numEqual++;}
 
-"-"		{ printf("SUB\n"); }
-"+"		{ printf("ADD\n"); }
-"*"		{ printf("MULT\n"); }
-"/"		{ printf("DIV\n"); }
-"%"		{ printf("MOD\n"); }
+{SCIENTIFICNUMBER} {printf("NUMBER %s\n", yytext); currPos += yyleng; numInt++;}
+[ \t]+ {/*ignore whitespace*/ currPos += yyleng;}
+"\n" {currLine++; currPos = 1;}
+. {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", currLine, currPos, yytext); exit(0);}
 
-"=="		{ printf("EQ\n"); }
-"<>"		{ printf("NEQ\n"); }
-"<"		{ printf("LT\n"); }
-">"		{ printf("GT\n"); }
-"<="		{ printf("LTE\n"); }
-">="		{ printf("GTE\n"); }
+%%
 
-{IDENTIFIER}	{ printf("IDENT %s\n", yytext); }
-{DIGIT}+	{ printf("NUMBER %s\n", yytext); }
+int main(int argc, char ** argv) {
+    // The input text can be optionally read from an input file
+    // (if one was specified on the command line)
+    if (argc >= 2) {
+        yyin = fopen(argv[1], "r"); // read file
+        if (yyin == NULL) yyin = stdin; // if an error occurred, use standard input instead
+    } else {
+        yyin = stdin;
+    }
 
-[ \t]+		{ /* ignore */ }
-
-";"		{ printf("SEMICOLON\n"); }
-":"		{ printf("COLON\n"); }
-","		{ printf("COMMA\n"); }
-"("		{ printf("L_PAREN\n"); }
-")"		{ printf("R_PAREN\n"); }
-"["		{ printf("L_SQUARE_BRACKET\n"); }
-"]"		{ printf("R_SQUARE_BRACKET\n"); }
-":="		{ printf("ASSIGN\n"); }
-
+    yylex(); // this is where the magic happens
+    printf("\nIntegers: %d \nOperators: %d \nParenthesis: %d \nEquals: %d \n", numInt, numOp, numParen, numEqual);
+    return 0;
+}
