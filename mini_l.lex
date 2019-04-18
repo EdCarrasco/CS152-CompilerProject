@@ -71,8 +71,9 @@ return		{ printf("RETURN\n"); currPos += yyleng; }
 
 {IDENTIFIER}	{ printf("IDENT %s\n", yytext); currPos += yyleng; }
 {DIGIT}+	{ printf("NUMBER %s\n", yytext); currPos += yyleng; }
-{INVALIDID} { printf("Error at line %d, column %d: invalid identifier \"%s\"\n", currLine, currPos, yytext); exit(0); }
-
+{INVALIDID_STARTSWITHNUM}    { printf("Error at line %d, column %d: invalid identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);  }
+{INVALIDID_ENDSINUNDERSCORE} { printf("Error at line %d, column %d: invalid identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); exit(0); }
+{INVALIDID_BOTH}             { printf("Error at line %d, column %d: invalid identifier \"%s\" must begin with a letter and cannot end with an underscore\n", currLine, currPos, yytext); exit(0); }
 {COMMENT}   {/*ignore comment*/ currLine++; currPos = 1;}
 [ \t]+		{/*ignore whitespace*/ currPos += yyleng;}
 "\n"		{currLine++; currPos = 1;}
