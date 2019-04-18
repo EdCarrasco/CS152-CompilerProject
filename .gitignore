@@ -1,3 +1,4 @@
 exec_me
 lex.yy.c
 a.out
+output.txt
