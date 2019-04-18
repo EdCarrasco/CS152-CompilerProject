@@ -83,11 +83,16 @@ int main(int argc, char ** argv) {
     // (if one was specified on the command line)
     if (argc >= 2) {
         yyin = fopen(argv[1], "r"); // read file
-        if (yyin == NULL) yyin = stdin; // if an error occurred, use standard input instead
+        if (yyin == NULL) {
+            printf("Enter some text:\n");
+            yyin = stdin; // if an error occurred, use standard input instead
+        }
     } else {
+        printf("Enter some text:\n");
         yyin = stdin;
     }
 
     yylex(); // this is where the magic happens
     return 0;
 }
+
