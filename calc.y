@@ -36,46 +36,56 @@ program :	  /* epsilon */
         	| function program
 		;
 
-function : 	  FUNCTION IDENTIFIER SEMICOLON BEGINPARAMS
+function : 	  FUNCTION IDENTIFIER SEMICOLON 
+		  BEGINPARAMS declaration_loop ENDPARAMS
+		  BEGINLOCALS declaration_loop ENDLOCALS
+		  BEGINBODY statement_loop ENDBODY
 		;
 
-declaration : 	  declarationid COLON arrayof INTEGER
+declaration_loop : 	  /* epsilon */
+			| declaration SEMICOLON declaration_loop
+			; 
+
+declaration : 	  id_loop COLON INTEGER
+		| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER
 		;
 
-arrayof : 	ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF
-		;
-
-declarationid :   IDENTIFIER COMMA declarationid
-		| IDENTIFIER
+id_loop :   	  IDENTIFIER
+		| IDENTIFIER COMMA id_loop
 		;
 
 statement : 	  var ASSIGN expresion
-		| IF bool-exp THEN stmt else_stmt ENDIF
-		| WHILE bool_expr BEGINLOOP stmt ENDLOOP
-		| DO BEGINLOOP stmt ENDLOOP WHILE bool_expr
+		| IF bool_expr THEN statement_loop ENDIF
+		| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF
+		| WHILE bool_expr BEGINLOOP statement_loop ENDLOOP
+		| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr
 		| READ var_loop
 		| WRITE var_loop
 		| CONTINUE
 		| RETURN expression
 		;
 
-stmt : 		  statement SEMICOLON
-		| statement SEMICOLON stmt
-		; 
-
-else_stmt : 	  ELSE stmt
+statement_loop :  statement SEMICOLON
+		| statement SEMICOLON statement_loop
 		;
 
-var_loop : 	  var COMMA
-		| var
+var_loop : 	  var
+		| var COMMA var_loop
 		;
 
-bool_expr : 	  relation_and_expr relandexpr_loop
+bool_expr : 	  relation_and_expr rel_and_exp_loop
 		;
 
-relandexpr_loop : or relation_and_expr relandexpr_loop
-		| /* epsilon */
-		;
+rel_and_expr_loop : 	  /* epsilon */
+			| or relation_and_expre rel_and_expr_loop
+			;
+
+relation_and_expr : 	  relation_expr relation_expr_loop
+			;
+
+relation_expr_loop : 	  /* epsilon */
+			| and relation_expr relation_expr_loop
+			;
 
 relation_exp : 	  not_optional expression comp expression
 		| not_optional TRUE
@@ -83,8 +93,8 @@ relation_exp : 	  not_optional expression comp expression
 		| not_optional L_PAREN bool_expr R_PAREN
 		;
 
-not_optional : 	  NOT
-		| /* epsilon */
+not_optional : 	  /* epsilon */
+		| NOT
 		; 
 
 comp : 		  EQ
@@ -108,8 +118,8 @@ add_op : 	  ADD
 multiplicative_expr : 	  term term_loop
 			;
 
-term_loop : 	  mul_op term term_loop
-		| /* epsilon */
+term_loop : 	  /* epsilon */
+		| mul_op term term_loop
 		;
 
 mul_op : 	  MULT
