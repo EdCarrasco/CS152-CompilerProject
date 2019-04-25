@@ -19,7 +19,7 @@ FILE * yyin;
 }
 
 %error-verbose
-$start program
+%start program
 %token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY
 %token INTEGER ARRAY OF IF THEN ENDIF ELSE 
 %token WHILE DO BEGINLOOP ENDLOOP CONTINUE
@@ -54,7 +54,7 @@ id_loop :   	  IDENTIFIER
 		| IDENTIFIER COMMA id_loop
 		;
 
-statement : 	  var ASSIGN expresion
+statement : 	  var ASSIGN expression
 		| IF bool_expr THEN statement_loop ENDIF
 		| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF
 		| WHILE bool_expr BEGINLOOP statement_loop ENDLOOP
@@ -73,21 +73,21 @@ var_loop : 	  var
 		| var COMMA var_loop
 		;
 
-bool_expr : 	  relation_and_expr rel_and_exp_loop
+bool_expr : 	  relation_and_expr rel_and_expr_loop
 		;
 
 rel_and_expr_loop : 	  /* epsilon */
-			| or relation_and_expre rel_and_expr_loop
+			| OR relation_and_expr rel_and_expr_loop
 			;
 
 relation_and_expr : 	  relation_expr relation_expr_loop
 			;
 
 relation_expr_loop : 	  /* epsilon */
-			| and relation_expr relation_expr_loop
+			| AND relation_expr relation_expr_loop
 			;
 
-relation_exp : 	  not_optional expression comp expression
+relation_expr :   not_optional expression comp expression
 		| not_optional TRUE
 		| not_optional FALSE
 		| not_optional L_PAREN bool_expr R_PAREN
@@ -133,6 +133,10 @@ term : 		  sign_optional var
 		| IDENTIFIER L_PAREN expression_loop R_PAREN
 		;
 
+sign_optional :   /* epsilon */
+		| SUB
+		;
+
 expression_loop : /* epsilon */
 		| expression
 		| expression COMMA expression_loop
@@ -143,4 +147,19 @@ var : 		  IDENTIFIER
 		;
 
 
-	
+%%
+
+int main(int argc, char ** argv) {
+    if (argc > 1) {
+        yyin = fopen(argv[1], "r");
+        if (yyin == NULL) {
+            printf("syntax: %s filename", argv[0]);
+        }
+    }
+    yyparse(); // more magical stuff
+    return 0;
+}
+
+void yyerror(const char *msg) {
+    printf("** Line %d, position %d: %s \n", currLine, currPos, msg);
+}	
