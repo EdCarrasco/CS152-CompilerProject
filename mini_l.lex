@@ -6,7 +6,7 @@
 */
 
 %{
-#include "y.tab.c"
+#include "y.tab.h"
 int currLine = 1, currPos = 1;
 %}
 
@@ -68,7 +68,7 @@ return		{ currPos += yyleng; return RETURN; }
 "]"		{ currPos += yyleng; return R_SQUARE_BRACKET; }
 ":="		{ currPos += yyleng; return ASSIGN; }
 
-{IDENTIFIER}	{ currPos += yyleng; return IDENT; }
+{IDENTIFIER}	{ currPos += yyleng; return IDENTIFIER; }
 {DIGIT}+	{ currPos += yyleng; return NUMBER; }
 {INVALIDID} { printf("Error at line %d, column %d: invalid identifier \"%s\"\n", currLine, currPos, yytext); exit(0); }
 
