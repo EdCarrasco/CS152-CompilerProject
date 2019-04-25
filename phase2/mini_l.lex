@@ -13,10 +13,10 @@ int currLine = 1, currPos = 1;
 LETTER      [a-zA-Z]
 DIGIT       [0-9]
 IDENTIFIER  ({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT}))|{LETTER}
-INVALIDID_STARTSWITHNUM       {DIGIT}+"_"*{IDENTIFIER}
+INVALIDID_START               ({DIGIT}|"_")+{IDENTIFIER}
 INVALIDID_ENDSINUNDERSCORE    {IDENTIFIER}"_"+
 INVALIDID_BOTH                {DIGIT}+{IDENTIFIER}+"_"+
-COMMENT     "#""#"+.*
+COMMENT     ##.*\n
 
 %%
 
@@ -72,7 +72,7 @@ return		{ currPos += yyleng; return RETURN; }
 
 {IDENTIFIER}	{ currPos += yyleng; return IDENTIFIER; }
 {DIGIT}+	{ currPos += yyleng; return NUMBER; }
-{INVALIDID_STARTSWITHNUM}    { printf("Error at line %d, column %d: invalid identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);  }
+{INVALIDID_START}    { printf("Error at line %d, column %d: invalid identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);  }
 {INVALIDID_ENDSINUNDERSCORE} { printf("Error at line %d, column %d: invalid identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); exit(0); }
 {INVALIDID_BOTH}             { printf("Error at line %d, column %d: invalid identifier \"%s\" must begin with a letter and cannot end with an underscore\n", currLine, currPos, yytext); exit(0); }
 
