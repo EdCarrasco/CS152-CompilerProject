@@ -1,0 +1,28 @@
+
+function main;
+beginparams
+## add declaration
+;
+endparams
+beginlocals
+## add declaration
+;
+endlocals
+beginbody
+## add declaration
+;   
+endbody
+
+function main2;
+beginparams
+## add declaration
+;
+endparams
+beginlocals
+## add declaration
+;
+endlocals
+beginbody
+## add declaration
+;   
+endbody
