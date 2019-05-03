@@ -1,48 +1,76 @@
 /*
-    Bison specification for MINI-L languange
+BISON specification for MINI-L language
+
 */
 
 %{
-int yyerror(char *s);
-int yylex(void);
+#include <stdio.h>
+#include <stdlib.h>
+
+void yyerror(const char *msg);
+extern int currLine;
+extern int currPos;
+extern char* currStr;
+FILE * yyin;
 %}
 
 %union{
-    int int_val;
-    string* op_val;
+    double dval;
+    int ival;
+    char* strval;
 }
 
-%start input
-
-%token <int_val> INTEGER_LITERAL
-%type  <int_val> exp
-%left  PLUS
-%left  MULT
+%error-verbose
+%start program
+%token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY
+%token INTEGER ARRAY OF IF THEN ENDIF ELSE 
+%token WHILE DO BEGINLOOP ENDLOOP CONTINUE
+%token READ WRITE AND OR NOT TRUE FALSE RETURN
+%token ADD SUB MULT DIV MOD
+%token EQ NEQ LT GT LTE GTE
+%token SEMICOLON COLON COMMA L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET ASSIGN
+%token <strval> IDENTIFIER
+%token <dval> NUMBER
 
 %%
 
-input:	/* empty */
-	| exp { cout << "Result: " << $1 << endl; }
-	;
+program:    /*epsilon*/
+    | function program
+    ;
 
-exp:	INTEGER_LITERAL { $$ = $1; }
-	| exp PLUS exp 	{ $$ = $1 + $3; }
-	| exp MULT exp 	{ $$ = $1 + $3; }
-	;
+function:   FUNCTION IDENTIFIER SEMICOLON
+            BEGINPARAMS declaration_loop SEMICOLON ENDPARAMS
+            BEGINLOCALS declaration_loop SEMICOLON ENDLOCALS
+            BEGINBODY statement_loop SEMICOLON ENDBODY
+            ;
 
+
+
+declaration_loop: /*epsilon*/
+    /* declaration_loop declaration SEMICOLON*/
+    ;
+
+
+statement_loop: /*epsilon*/
+    /*| statement_loop statement SEMICOLON*/
+    ;
+
+/*declaration:;
+statement:;
+*/
 %%
 
-
-int yyerror(string s) {
-    extern int yylineno; // defined in lex.c
-    extern char *yytext; // defined in lex.c
-    
-    cerr << "ERROR: " << s << " at symbol \"" << yytext;
-    cerr << "\" on line " << yylineno << endl;
-    exit(1);
+int main(int argc, char ** argv) {
+    if (argc > 1) {
+        yyin = fopen(argv[1], "r");
+        if (yyin == NULL) {
+            printf("syntax: %s filename", argv[0]);
+        }
+    }
+    yyparse(); // more magical stuff
+    return 0;
 }
 
-int yyerror(char *s) {
-    return yyerror(string(s));
-}
-
+void yyerror(const char *msg) {
+    printf("** Line %d, position %d: %s \n", currLine, currPos, msg);
+}	
