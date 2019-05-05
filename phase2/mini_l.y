@@ -35,29 +35,115 @@ FILE * yyin;
 %%
 
 program:    /*epsilon*/
-    | function program
+    | program function
     ;
 
 function:   FUNCTION IDENTIFIER SEMICOLON
-            BEGINPARAMS declaration_loop SEMICOLON ENDPARAMS
-            BEGINLOCALS declaration_loop SEMICOLON ENDLOCALS
-            BEGINBODY statement_loop SEMICOLON ENDBODY
+            BEGINPARAMS declaration_loop ENDPARAMS
+            BEGINLOCALS declaration_loop ENDLOCALS
+            BEGINBODY statement_loop ENDBODY
             ;
 
 
 
 declaration_loop: /*epsilon*/
-    /* declaration_loop declaration SEMICOLON*/
-    ;
+    		| declaration_loop declaration SEMICOLON
+    		;
 
 
 statement_loop: /*epsilon*/
-    /*| statement_loop statement SEMICOLON*/
-    ;
+		| statement_loop statement SEMICOLON
+		;
 
-/*declaration:;
-statement:;
-*/
+declaration:	  id_loop COLON INTEGER
+		| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER
+		;
+
+id_loop: 	IDENTIFIER
+		| IDENTIFIER COMMA id_loop
+		;
+
+statement:	  var ASSIGN expression
+		| IF bool_expr THEN statement_loop ENDIF
+		| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF
+		| WHILE bool_expr BEGINLOOP statement_loop ENDLOOP
+		| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr
+		| READ var_loop
+		| WRITE var_loop
+		| CONTINUE
+		| RETURN expression
+		;
+
+var_loop:	  var
+		| var COMMA var_loop
+		;
+
+bool_expr:	  relation_and_expr or_loop
+		;
+
+or_loop:	  /**/
+		| OR relation_and_expr
+		;
+
+relation_and_expr:	  relation_expr and_loop
+			;
+
+and_loop:	  /**/
+		| AND relation_expr and_loop
+		;
+
+relation_expr:	  expression comp expression
+		| NOT expression comp expression
+		| TRUE
+		| NOT TRUE
+		| FALSE
+		| NOT FALSE
+		| L_PAREN bool_expr R_PAREN
+		;
+
+comp:		  EQ
+		| NEQ
+		| LT
+		| GT
+		| LTE
+		| GTE
+		;
+
+expression:	  mult_expr mult_expr_loop
+		;
+
+mult_expr_loop:	  /**/
+		| SUB mult_expr mult_expr_loop
+		| ADD mult_expr mult_expr_loop
+		;
+
+mult_expr:	  term term_loop
+		;
+
+term_loop:	  /**/
+		| MULT term term_loop
+		| DIV term term_loop
+		| MOD term term_loop
+		;
+
+term:		  var
+		| SUB var
+		| NUMBER
+		| SUB NUMBER
+		| L_PAREN expression R_PAREN
+		| SUB L_PAREN expression R_PAREN
+		| IDENTIFIER L_PAREN R_PAREN
+		| IDENTIFIER L_PAREN expression_loop R_PAREN
+		;
+
+expression_loop:	  expression
+			| expression COMMA expression_loop
+			;
+		
+var:		  IDENTIFIER
+		| IDENTIFIER L_SQUARE_BRACKET expression R_SQUARE_BRACKET
+		;
+
 %%
 
 int main(int argc, char ** argv) {
@@ -72,5 +158,5 @@ int main(int argc, char ** argv) {
 }
 
 void yyerror(const char *msg) {
-    printf("** Line %d, position %d: %s \n", currLine, currPos, msg);
+    printf("** ----- Line %d, position %d: %s \n", currLine, currPos, msg);
 }	

@@ -32,37 +32,37 @@ FILE * yyin;
 
 %%
 
-program :	  /* epsilon */
-        	| function program
+program :	  /* epsilon */ { printf("program -> epsilon\n"); }
+        	| function program { printf("program -> function program\n"); }
 		;
 
 function : 	  FUNCTION IDENTIFIER SEMICOLON 
-		  BEGINPARAMS declaration_loop ENDPARAMS
-		  BEGINLOCALS declaration_loop ENDLOCALS
-		  BEGINBODY statement_loop ENDBODY
+		  BEGINPARAMS declaration_loop ENDPARAMS 
+		  BEGINLOCALS declaration_loop ENDLOCALS 
+		  BEGINBODY statement_loop ENDBODY { printf("function -> FUNCTION IDENTIFIER %s SEMICOLON BEGINPARAMS declaration_loop ENDPARAMS BEGINLOCALS declaration_loop ENDLOCALS BEGINBODY statement_loop ENDBODY\n", $2); }
 		;
 
-declaration_loop : 	  /* epsilon */
-			| declaration SEMICOLON declaration_loop
+declaration_loop : 	  /* epsilon */ { printf("declaration_loop -> epsilon\n"); }
+			| declaration SEMICOLON declaration_loop { printf("declaration_loop -> declaration SEMICOLON declaration_loop\n"); }
 			; 
 
-declaration : 	  id_loop COLON INTEGER
-		| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER
+declaration : 	  id_loop COLON INTEGER { printf("declaration -> id_loop COLON INTEGER\n"); }
+		| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER { printf("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER\n"); }
 		;
 
-id_loop :   	  IDENTIFIER
-		| IDENTIFIER COMMA id_loop
+id_loop :   	  IDENTIFIER { printf("id_loop -> IDENTIFIER %s\n", $1); }
+		| IDENTIFIER COMMA id_loop { printf("id_loop -> IDENTIFIER %s COMMA id_loop\n", $1); }
 		;
 
-statement : 	  var ASSIGN expression
-		| IF bool_expr THEN statement_loop ENDIF
-		| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF
-		| WHILE bool_expr BEGINLOOP statement_loop ENDLOOP
-		| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr
-		| READ var_loop
-		| WRITE var_loop
-		| CONTINUE
-		| RETURN expression
+statement : 	  var ASSIGN expression { printf("statement -> var ASSIGN expression\n"); }
+		| IF bool_expr THEN statement_loop ENDIF { printf("statement -> IF bool_expr THEN statement_loop ENDIF\n"); }
+		| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF { printf("statement -> IF bool_expr THEN statement_loop ELSE statement_loop ENDIF\n"); }
+		| WHILE bool_expr BEGINLOOP statement_loop ENDLOOP { printf("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n"); }
+		| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr { printf("statement -> DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr\n"); }
+		| READ var_loop { printf("statement -> READ var_loop\n"); }
+		| WRITE var_loop { printf("statement -> WRITE var_loop\n"); }
+		| CONTINUE { printf("statement -> CONTINUE\n"); }
+		| RETURN expression { printf("statement -> RETURN expression\n"); }
 		;
 
 statement_loop :  statement SEMICOLON
