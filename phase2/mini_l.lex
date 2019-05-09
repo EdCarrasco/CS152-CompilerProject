@@ -70,8 +70,8 @@ return		{ currPos += yyleng; return RETURN; }
 "]"		{ currPos += yyleng; return R_SQUARE_BRACKET; }
 ":="		{ currPos += yyleng; return ASSIGN; }
 
-{IDENTIFIER}	{ currPos += yyleng; return IDENTIFIER; }
-{DIGIT}+	{ currPos += yyleng; return NUMBER; }
+{IDENTIFIER}	{ currPos += yyleng; yylval.strval = strdup(yytext); return IDENTIFIER; }
+{DIGIT}+	{ currPos += yyleng; yylval.ival = atoi(yytext); return NUMBER; }
 {INVALIDID_START}    { printf("Error at line %d, column %d: invalid identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);  }
 {INVALIDID_ENDSINUNDERSCORE} { printf("Error at line %d, column %d: invalid identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); exit(0); }
 {INVALIDID_BOTH}             { printf("Error at line %d, column %d: invalid identifier \"%s\" must begin with a letter and cannot end with an underscore\n", currLine, currPos, yytext); exit(0); }
@@ -79,7 +79,7 @@ return		{ currPos += yyleng; return RETURN; }
 {COMMENT}   {/*ignore comment*/ currLine++; currPos = 1; }
 [ \t]+		{/*ignore whitespace*/ currPos += yyleng;}
 "\n"		{currLine++; currPos = 1;}
-.		{printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", currLine, currPos, yytext); exit(0);}
+.		{printf("Error at ... line %d, column %d: unrecognized symbol %d \"%s\"\n", currLine, currPos, atoi(yytext), yytext); exit(0);}
 
 %%
 
