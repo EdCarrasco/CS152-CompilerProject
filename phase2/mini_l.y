@@ -54,17 +54,17 @@ declaration_loop: /*epsilon*/ { printf("declaration_loop -> epsilon\n"); }
     		| declaration_loop declaration SEMICOLON { printf("declaration_loop -> declaration_loop declaration SEMICOLON\n"); }
     		;
 
-statement_loop: /*epsilon*/ { printf("statement_loop -> epsilon\n"); }
+statement_loop: statement SEMICOLON { printf("statement_loop -> statement SEMICOLON\n"); }
 		| statement_loop statement SEMICOLON { printf("statement_loop -> statement_loop statement SEMICOLON\n"); }
 		;
 
-declaration:	  id_loop COLON INTEGER { printf("declaration -> id_loop COLON INTEGER\n"); }
+declaration:	 id_loop COLON INTEGER { printf("declaration -> id_loop COLON INTEGER\n"); }
 		| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER { printf("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5); }
 		;
 
-id_loop: 	IDENTIFIER { printf("id_loop -> IDENTIFIER %s\n", $1); }
-		| IDENTIFIER COMMA id_loop { printf("id_loop -> IDENTIFIER %s COMMA id_loop\n", $1); }
-		;
+id_loop:    IDENTIFIER { printf("id_loop -> IDENTIFIER"); }
+    | id_loop COMMA IDENTIFIER { printf("id_loop -> id_loop COMMA IDENTIFIER"); }
+    ;
 
 statement:	  var ASSIGN expression { printf("statement -> var ASSIGN expression\n"); }
 		| IF bool_expr THEN statement_loop ENDIF { printf("statement -> IF bool_expr THEN statement_loop ENDIF\n"); }
@@ -78,22 +78,16 @@ statement:	  var ASSIGN expression { printf("statement -> var ASSIGN expression\
 		;
 
 var_loop:	  var { printf("var_loop -> var\n"); }
-		| var COMMA var_loop { printf("var_loop -> var COMMA var_loop\n"); }
+		| var_loop COMMA var { printf("var_loop -> var_loop COMMA var\n"); }
 		;
 
-bool_expr:	  relation_and_expr or_loop { printf("bool_expr -> relation_and_expr or_loop\n"); }
-		;
+bool_expr:	  relation_and_expr { printf("bool_expr -> relation_and_expr\n"); }
+        | bool_expr OR relation_and_expr { printf("bool_expr -> bool_expr OR relation_and_expr\n"); }
+        ;
 
-or_loop:	  /*epsilon*/ { printf("or_loop -> epsilon\n"); }
-		| OR relation_and_expr { printf("or_loop -> OR relation_and_expr\n"); }
-		;
-
-relation_and_expr:	  relation_expr and_loop { printf("relation_and_expr -> relation_expr and_loop\n"); }
-			;
-
-and_loop:	  /*epsilon*/ { printf("and_loop -> epsilon\n"); }
-		| AND relation_expr and_loop { printf("and_loop -> AND relation_expr and_loop\n"); }
-		;
+relation_and_expr:	  relation_expr { printf("relation_and_expr -> relation_expr\n"); }
+        | relation_and_expr AND relation_expr { printf("relation_and_expr -> relation_and_expr AND relation_expr\n"); }
+        ;
 
 relation_expr:	  expression comp expression { printf("relation_expr -> expression comp expression\n"); }
 		| NOT expression comp expression { printf("relation_expr -> NOT expression comp expression\n"); }
@@ -112,22 +106,14 @@ comp:		  EQ { printf("comp -> EQ\n"); }
 		| GTE { printf("comp -> GTE\n"); }
 		;
 
-expression:	  mult_expr mult_expr_loop { printf("expression -> mult_expr mult_expr_loop\n"); }
-		;
+expression: mult_expr { printf("expression -> mult_expr\n"); }
+        | expression ADD mult_expr { printf("expression -> expression ADD mult_expr\n"); }
+        | expression SUB mult_expr { printf("expression -> expression SUB mult_expr\n"); }
+        ;
 
-mult_expr_loop:	  /*epsilon*/ { printf("mult_expr_loop -> epsilon\n"); }
-		| SUB mult_expr mult_expr_loop { printf("mult_expr_loop -> SUB mult_expr mult_expr_loop\n"); }
-		| ADD mult_expr mult_expr_loop { printf("mult_expr_loop -> ADD mult_expr mult_expr_loop\n"); }
-		;
-
-mult_expr:	  term term_loop { printf("mult_expr -> term term_loop\n"); }
-		;
-
-term_loop:	  /*epsilon*/ { printf("term_loop -> epsilon\n"); }
-		| mulop term term_loop { printf("term_loop -> %s term term_loop\n", $1); }
-		/*| mulop term term_loop { printf("term_loop -> DIV term term_loop\n"); }*
-		/*| mulop term term_loop { printf("term_loop -> MOD term term_loop\n"); }*/
-		;
+mult_expr:	  term  { printf("mult_expr -> term\n"); }
+        | mult_expr mulop term { printf("mult_expr -> mult_expr %s term\n", $2); }
+        ;
 
 mulop: 	  MULT { $$ = "MULT"; }
 	| DIV  { $$ = "DIV"; }
@@ -144,9 +130,9 @@ term:		  var { printf("term -> var\n"); }
 		| IDENTIFIER L_PAREN expression_loop R_PAREN { printf("term -> IDENTIFIER %s L_PAREN expression_loop R_PAREN\n", $1); }
 		;
 
-expression_loop:	  expression { printf("expression_loop -> expression\n"); }
-			| expression COMMA expression_loop { printf("expression_loop -> expression COMMA expression_loop\n"); }
-			;
+expression_loop:    expression { printf("expression_loop -> expression"); }
+    | expression_loop COMMA expression { printf("expression_loop -> expression_loop COMMA expression"); }
+    ;
 		
 var:		  IDENTIFIER { printf("var -> IDENTIFIER %s\n", $1); }
 		| IDENTIFIER L_SQUARE_BRACKET expression R_SQUARE_BRACKET { printf("var -> IDENTIFIER %s L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n", $1); }
