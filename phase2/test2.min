@@ -4,9 +4,5 @@ endparams
 beginlocals
 endlocals
 beginbody
-	x := 5;
-	
-	a := 2 + 3 * 4;
-	b := 40 * 30 + 20;
-	TESTING := FOO();
+	a := 1 + 2 + 3;
 endbody
