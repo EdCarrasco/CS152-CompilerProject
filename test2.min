@@ -1,0 +1,8 @@
+function main;
+beginparams
+endparams
+beginlocals
+endlocals
+beginbody
+	a := 1 + 2 + 3;
+endbody
