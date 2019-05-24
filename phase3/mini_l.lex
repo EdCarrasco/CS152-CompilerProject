@@ -1,15 +1,18 @@
-/*
-    Flex specification that recognizes tokens in the MINI-L language.
-    Prints out an error message and exits if any unrecognized character is
-    encountered in the input.
-    Prints the identified tokens to the screen, one token per line.
-*/
-
 %{
-#include "y.tab.h"
-int currLine = 1, currPos = 1;
+#include <iostream>
+#define YY_DECL yy::parser::symbol_type yylex()
+#include "parser.tab.hh"
+
+static yy::location loc;
 %}
 
+%option noyywrap 
+
+%{
+#define YY_USER_ACTION loc.columns(yyleng);
+%}
+
+	/* your definitions here */
 LETTER      [a-zA-Z]
 DIGIT       [0-9]
 IDENTIFIER  ({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT}))|{LETTER}
@@ -17,82 +20,81 @@ INVALIDID_START               ({DIGIT}|"_")+{IDENTIFIER}
 INVALIDID_ENDSINUNDERSCORE    {IDENTIFIER}"_"+
 INVALIDID_BOTH                {DIGIT}+{IDENTIFIER}+"_"+
 COMMENT     ##.*\n
+	/* your definitions end */
 
 %%
 
-function	{ currPos += yyleng; return FUNCTION; }
-beginparams	{ currPos += yyleng; return BEGINPARAMS; }
-endparams	{ currPos += yyleng; return ENDPARAMS; }
-beginlocals	{ currPos += yyleng; return BEGINLOCALS; }
-endlocals	{ currPos += yyleng; return ENDLOCALS; }
-beginbody	{ currPos += yyleng; return BEGINBODY; }
-endbody		{ currPos += yyleng; return ENDBODY; }
-integer		{ currPos += yyleng; return INTEGER; }
-array		{ currPos += yyleng; return ARRAY; }
-of		{ currPos += yyleng; return OF; }
-if		{ currPos += yyleng; return IF; }
-then		{ currPos += yyleng; return THEN; }
-endif		{ currPos += yyleng; return ENDIF; }
-else		{ currPos += yyleng; return ELSE; }
-while		{ currPos += yyleng; return WHILE; }
-do		{ currPos += yyleng; return DO; }
-beginloop	{ currPos += yyleng; return BEGINLOOP; }
-endloop		{ currPos += yyleng; return ENDLOOP; }
-continue	{ currPos += yyleng; return CONTINUE; }
-read		{ currPos += yyleng; return READ; }
-write		{ currPos += yyleng; return WRITE; }
-and		{ currPos += yyleng; return AND; }
-or		{ currPos += yyleng; return OR; }
-not		{ currPos += yyleng; return NOT; }
-true		{ currPos += yyleng; return TRUE; }
-false		{ currPos += yyleng; return FALSE; }
-return		{ currPos += yyleng; return RETURN; }
+%{
+loc.step(); 
+%}
 
-"-"		{ currPos += yyleng; return SUB; }
-"+"		{ currPos += yyleng; return ADD; }
-"*"		{ currPos += yyleng; return MULT; }
-"/"		{ currPos += yyleng; return DIV; }
-"%"		{ currPos += yyleng; return MOD; }
+	/* your rules here */
+function    { return yy::parser::make_FUNCTION(loc); }
+beginparams	{ return yy::parser::make_BEGINPARAMS(loc); }
+endparams	{ return yy::parser::make_ENDPARAMS(loc); }
+beginlocals	{ return yy::parser::make_BEGINLOCALS(loc); }
+endlocals	{ return yy::parser::make_ENDLOCALS(loc); }
+beginbody	{ return yy::parser::make_BEGINBODY(loc); }
+endbody		{ return yy::parser::make_ENDBODY(loc); }
+integer		{ return yy::parser::make_INTEGER(loc); }
+array		{ return yy::parser::make_ARRAY(loc); }
+of		    { return yy::parser::make_OF(loc); }
+if		    { return yy::parser::make_IF(loc); }
+then		{ return yy::parser::make_THEN(loc); }
+endif		{ return yy::parser::make_ENDIF(loc); }
+else		{ return yy::parser::make_ELSE(loc); }
+while		{ return yy::parser::make_WHILE(loc); }
+do		    { return yy::parser::make_DO(loc); }
+beginloop	{ return yy::parser::make_BEGINLOOP(loc); }
+endloop		{ return yy::parser::make_ENDLOOP(loc); }
+continue	{ return yy::parser::make_CONTINUE(loc); }
+read		{ return yy::parser::make_READ(loc); }
+write		{ return yy::parser::make_WRITE(loc); }
+and		    { return yy::parser::make_AND(loc); }
+or		    { return yy::parser::make_OR(loc); }
+not		    { return yy::parser::make_NOT(loc); }
+true		{ return yy::parser::make_TRUE(loc); }
+false		{ return yy::parser::make_FALSE(loc); }
+return		{ return yy::parser::make_RETURN(loc); }
 
-"=="		{ currPos += yyleng; return EQ; }
-"<>"		{ currPos += yyleng; return NEQ; }
-"<"		{ currPos += yyleng; return LT; }
-">"		{ currPos += yyleng; return GT; }
-"<="		{ currPos += yyleng; return LTE; }
-">="		{ currPos += yyleng; return GTE; }
+"-"		    { return yy::parser::make_SUB(loc); }
+"+"		    { return yy::parser::make_ADD(loc); }
+"*"		    { return yy::parser::make_MULT(loc); }
+"/"		    { return yy::parser::make_DIV(loc); }
+"%"		    { return yy::parser::make_MOD(loc); }
 
-";"		{ currPos += yyleng; return SEMICOLON; }
-":"		{ currPos += yyleng; return COLON; }
-","		{ currPos += yyleng; return COMMA; }
-"("		{ currPos += yyleng; return L_PAREN; }
-")"		{ currPos += yyleng; return R_PAREN; }
-"["		{ currPos += yyleng; return L_SQUARE_BRACKET; }
-"]"		{ currPos += yyleng; return R_SQUARE_BRACKET; }
-":="		{ currPos += yyleng; return ASSIGN; }
+"=="		{ return yy::parser::make_EQ(loc); }
+"<>"		{ return yy::parser::make_NEQ(loc); }
+"<"		    { return yy::parser::make_LT(loc); }
+">"         { return yy::parser::make_GT(loc); }
+"<="	    { return yy::parser::make_LTE(loc); }
+">="		{ return yy::parser::make_GTE(loc); }
 
-{IDENTIFIER}	{ currPos += yyleng; yylval.strval = strdup(yytext); return IDENTIFIER; }
-{DIGIT}+	{ currPos += yyleng; yylval.ival = atoi(yytext); return NUMBER; }
-{INVALIDID_START}    { printf("Error at line %d, column %d: invalid identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);  }
-{INVALIDID_ENDSINUNDERSCORE} { printf("Error at line %d, column %d: invalid identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); exit(0); }
-{INVALIDID_BOTH}             { printf("Error at line %d, column %d: invalid identifier \"%s\" must begin with a letter and cannot end with an underscore\n", currLine, currPos, yytext); exit(0); }
+";"		    { return yy::parser::make_SEMICOLON(loc); }
+":"		    { return yy::parser::make_COLON(loc); }
+","		    { return yy::parser::make_COMMA(loc); }
+"("		    { return yy::parser::make_L_PAREN(loc); }
+")"		    { return yy::parser::make_R_PAREN(loc); }
+"["		    { return yy::parser::make_L_SQUARE_BRACKET(loc); }
+"]"		    { return yy::parser::make_R_SQUARE_BRACKET(loc); }
+":="		{ return yy::parser::make_ASSIGN(loc); }
 
-{COMMENT}   {/*ignore comment*/ currLine++; currPos = 1; }
-[ \t]+		{/*ignore whitespace*/ currPos += yyleng;}
-"\n"		{currLine++; currPos = 1;}
-.		{printf("Error at ... line %d, column %d: unrecognized symbol %d \"%s\"\n", currLine, currPos, atoi(yytext), yytext); exit(0);}
+{IDENTIFIER}	{ return yy::parser::make_IDENTIFIER(yytext, loc); }
+{DIGIT}+	{ return yy::parser::make_NUMBER(atoi(yytext),loc); }
+
+{COMMENT}   {/*ignore comment*/}
+[ \t]+		{/*ignore whitespace*/ }
+"\n"		{/*ignore newline*/}
+
+	/* use this structure to pass the Token :
+	 * return yy::parser::make_TokenName(loc)
+	 * if the token has a type you can pass its value
+	 * as the first argument. as an example we put
+	 * the rule to return token function.
+	 */
+
+ <<EOF>>	{return yy::parser::make_END(loc);}
+	/* your rules end */
 
 %%
 
-/*int main(int argc, char ** argv) {
-    // The input text can be optionally read from an input file
-    // (if one was specified on the command line)
-    if (argc >= 2) {
-        yyin = fopen(argv[1], "r"); // read file
-        if (yyin == NULL) yyin = stdin; // if an error occurred, use standard input instead
-    } else {
-        yyin = stdin;
-    }
-
-    yylex(); // this is where the magic happens
-    return 0;
-}*/
