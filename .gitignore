@@ -13,3 +13,6 @@ phase2/parser
 phase2/lex.yy.c
 */milRun.stat
 phase3/parser
+*.hh
+parser.output
+parser.tab.cc
