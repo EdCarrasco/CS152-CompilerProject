@@ -1,0 +1,96 @@
+diff --git a/phase3/mini_l.yy b/phase3/mini_l.yy
+index 0095db1..6bf8ec9 100644
+--- a/phase3/mini_l.yy
++++ b/phase3/mini_l.yy
+@@ -76,8 +76,8 @@ yy::parser::symbol_type yylex();
+ %token <std::string> IDENTIFIER
+ %token <int> NUMBER
+ 
+-%type  <std::string> program function declaration mulop statement
+-%type  <std::vector<std::string>> id_loop statement_loop declaration_loop
++%type  <std::string> program function declaration mulop statement var
++%type  <std::vector<std::string>> id_loop statement_loop declaration_loop var_loop
+ 
+ 
+ %right ASSIGN
+@@ -177,7 +177,9 @@ declaration:
+     }
+ 	|
+     id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
++
+         debug_print_int("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5);
++
+         //TODO
+     }
+ ;
+@@ -206,15 +208,40 @@ statement:	  var ASSIGN expression { debug_print("statement -> var ASSIGN expres
+ 		| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF { debug_print("statement -> IF bool_expr THEN statement_loop ELSE statement_loop ENDIF\n"); }
+ 		| WHILE bool_expr BEGINLOOP statement_loop ENDLOOP { debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n"); }
+ 		| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr { debug_print("statement -> DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr\n"); }
+-		| READ var_loop { debug_print("statement -> READ var_loop\n"); }
+-		| WRITE var_loop { debug_print("statement -> WRITE var_loop\n"); }
++
++		| READ var_loop {
++
++            debug_print("statement -> READ var_loop\n");
++            $$ = concat($2, ".< ", "\n");
++            
++        }
++
++		| WRITE var_loop {
++
++            debug_print("statement -> WRITE var_loop\n");
++            $$ = concat($2, ".> ", "\n");
++        }
++
+ 		| CONTINUE { debug_print("statement -> CONTINUE\n"); }
+ 		| RETURN expression { debug_print("statement -> RETURN expression\n"); }
+ 		;
+ 
+-var_loop:	  var { debug_print("var_loop -> var\n"); }
+-		| var_loop COMMA var { debug_print("var_loop -> var_loop COMMA var\n"); }
+-		;
++var_loop:
++
++    var {
++
++        debug_print("var_loop -> var\n");
++        $$.push_back($1);
++
++    }
++
++	| var_loop COMMA var {
++
++        debug_print("var_loop -> var_loop COMMA var\n");
++        $$ = $1;
++        $$.push_back($3);
++    }
++;
+ 
+ bool_expr:	  relation_and_expr { debug_print("bool_expr -> relation_and_expr\n"); }
+         | bool_expr OR relation_and_expr { debug_print("bool_expr -> bool_expr OR relation_and_expr\n"); }
+@@ -269,9 +296,21 @@ expression_loop:    expression { debug_print("expression_loop -> expression"); }
+     | expression_loop COMMA expression { debug_print("expression_loop -> expression_loop COMMA expression"); }
+     ;
+ 		
+-var:		  IDENTIFIER { debug_print_char("var -> IDENTIFIER %s\n", $1); }
+-		| IDENTIFIER L_SQUARE_BRACKET expression R_SQUARE_BRACKET { debug_print_char("var -> IDENTIFIER %s L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n", $1); }
+-		;
++var:
++
++    IDENTIFIER {
++
++        debug_print_char("var -> IDENTIFIER %s\n", $1);
++
++        $$ = $1;
++    }
++
++	| IDENTIFIER L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
++
++        debug_print_char("var -> IDENTIFIER %s L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n", $1); }
++
++        //TODO
++	;
+ 
+ 
+ %%
