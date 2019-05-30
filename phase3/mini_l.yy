@@ -76,8 +76,8 @@ yy::parser::symbol_type yylex();
 %token <std::string> IDENTIFIER
 %token <int> NUMBER
 
-%type  <std::string> program function declaration_loop statement_loop declaration mulop
-%type  <std::vector<std::string>> id_loop
+%type  <std::string> program function declaration mulop statement
+%type  <std::vector<std::string>> id_loop statement_loop declaration_loop
 
 
 %right ASSIGN
@@ -110,55 +110,96 @@ program:    /*epsilon*/ { debug_print("program -> epsilon\n"); $$ = "";}
 function:   FUNCTION IDENTIFIER SEMICOLON
             BEGINPARAMS declaration_loop ENDPARAMS
             BEGINLOCALS declaration_loop ENDLOCALS
-            BEGINBODY statement_loop ENDBODY
-            { debug_print_char("function -> FUNCTION IDENTIFIER %s SEMICOLON ", $2);
-            debug_print("BEGINPARAMS declaration_loop ENDPARAMS ");
-            debug_print("BEGINLOCALS declaration_loop ENDLOCALS ");
-            debug_print("BEGINBODY statement_loop ENDBODY\n");
-            
-            $$ = "func " + $2 + "\n";
+            BEGINBODY statement_loop ENDBODY {
 
-            $$ += $5 + "\n";
-            $$ += $8 + "\n";
-            $$ += $11 + "\n";
+        debug_print_char("function -> FUNCTION IDENTIFIER %s SEMICOLON ", $2);
+        debug_print("BEGINPARAMS declaration_loop ENDPARAMS ");
+        debug_print("BEGINLOCALS declaration_loop ENDLOCALS ");
+        debug_print("BEGINBODY statement_loop ENDBODY\n");
 
-            $$ += "endfunc\n";}
-            ;
+        $$ = "func " + $2 + "\n";
+        std::string temp;
 
-declaration_loop: /*epsilon*/ { debug_print("declaration_loop -> epsilon\n"); $$ = ""; }
-    		| declaration_loop declaration SEMICOLON {
-                debug_print("declaration_loop -> declaration_loop declaration SEMICOLON\n");
-                $$ = $1 + $2; }
-    		;
+        // params declaration loop
+        $$ += concat($5, "", "");
 
-statement_loop: statement SEMICOLON { debug_print("statement_loop -> statement SEMICOLON\n"); }
-		| statement_loop statement SEMICOLON { debug_print("statement_loop -> statement_loop statement SEMICOLON\n"); }
-		;
+        // locals declaration loop
+        $$ += concat($8, "", "");
 
-declaration:    id_loop COLON INTEGER { 
-                    debug_print("declaration -> id_loop COLON INTEGER\n");
-                    $$ = "";
-                    for (std::string s : $1)
-                        $$ += ". " + s + '\n';
+        // body statement loop
+        $$ += concat($11, "", "");
+
+        $$ += "endfunc\n";
+    }
+;
+
+declaration_loop:
+    /*epsilon*/ {
+
+        debug_print("declaration_loop -> epsilon\n");
+        // don't add anything to vector
+    }
+	|
+    declaration_loop declaration SEMICOLON {
+
+        debug_print("declaration_loop -> declaration_loop declaration SEMICOLON\n");
+
+        $$ = $1;
+        $$.push_back($2);
+    }
+;
+
+statement_loop:
+
+    statement SEMICOLON {
+
+        debug_print("statement_loop -> statement SEMICOLON\n");
+        $$.push_back($1);
+    }
+	|
+    statement_loop statement SEMICOLON {
+
+        debug_print("statement_loop -> statement_loop statement SEMICOLON\n");
+
+        $$ = $1;
+        $$.push_back($2);
+    }
+;
+
+declaration:
+
+    id_loop COLON INTEGER {
+
+        debug_print("declaration -> id_loop COLON INTEGER\n");
+
+        $$ += concat($1, ". ", "\n");
                 
-                }
-		| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER { debug_print_int("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5); }
-		;
+    }
+	|
+    id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
+        debug_print_int("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5);
+        //TODO
+    }
+;
 
-id_loop:    IDENTIFIER {
-                debug_print("id_loop -> IDENTIFIER");
+id_loop:
 
-                $$.push_back($1);
-            }
-    | id_loop COMMA IDENTIFIER {
-                        debug_print("id_loop -> id_loop COMMA IDENTIFIER");
+    IDENTIFIER {
+
+        debug_print("id_loop -> IDENTIFIER");
+        $$.push_back($1);
+    }
+    |
+    id_loop COMMA IDENTIFIER {
+
+        debug_print("id_loop -> id_loop COMMA IDENTIFIER");
                         
-                        for (std::string s : $1)
-                            $$.push_back(s);
+        for (std::string s : $1)
+            $$.push_back(s);
                         
-                        $$.push_back($3);
-                    }
-    ;
+        $$.push_back($3);
+    }
+;
 
 statement:	  var ASSIGN expression { debug_print("statement -> var ASSIGN expression\n"); }
 		| IF bool_expr THEN statement_loop ENDIF { debug_print("statement -> IF bool_expr THEN statement_loop ENDIF\n"); }
