@@ -246,7 +246,7 @@ void yy::parser::error(const yy::location& l, const std::string& m)
 
 void debug_print(std::string msg) {
 
-    if (debug) printf(msg.c_str());
+    if (debug) printf("%s", msg.c_str());
 }
 
 void debug_print_char(std::string msg, std::string c) {
