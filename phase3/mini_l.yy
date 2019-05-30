@@ -76,8 +76,8 @@ yy::parser::symbol_type yylex();
 %token <std::string> IDENTIFIER
 %token <int> NUMBER
 
-%type  <std::string> program function declaration mulop statement
-%type  <std::vector<std::string>> id_loop statement_loop declaration_loop
+%type  <std::string> program function declaration mulop statement var
+%type  <std::vector<std::string>> id_loop statement_loop declaration_loop var_loop
 
 
 %right ASSIGN
