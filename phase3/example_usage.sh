@@ -1,1 +1,1 @@
-make && cat mytest.min | ./parser
+make && cat $1 | ./parser
