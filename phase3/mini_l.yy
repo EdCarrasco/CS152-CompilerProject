@@ -31,6 +31,8 @@ void debug_print(std::string msg);
 void debug_print_char(std::string msg, std::string c);
 void debug_print_int(std::string msg, int i);
 
+std::string concat(std::vector<std::string> strings, std::string prefix, std::string delim);
+
 
 	/* define the sturctures using as types for non-terminals */
 
@@ -258,3 +260,15 @@ void debug_print_int(std::string msg, int i) {
 
     if (debug) printf(msg.c_str(), i);
 }
+
+std::string concat(std::vector<std::string> strings, std::string prefix, std::string delim) {
+
+    std::string str = "";
+
+    for (std::string this_str : strings)
+        str += prefix + this_str + delim;
+
+    return str;
+
+}
+
