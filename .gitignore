@@ -15,4 +15,4 @@ phase2/lex.yy.c
 phase3/parser
 *.hh
 parser.output
-parser.tab.cc
+*.tab.cc
