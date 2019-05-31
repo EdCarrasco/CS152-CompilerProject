@@ -199,7 +199,7 @@ declaration:
         $$ += concat($1, ". ", "\n");
                 
     }
-    
+
 	| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
 
         debug_print_int("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5);
@@ -234,7 +234,7 @@ statement:
 
     var ASSIGN expression { debug_print("statement -> var ASSIGN expression\n"); }
 
-	| IF bool_expr THEN statement_loop ENDIF {
+	| IF bool_expr THEN inc_scope statement_loop dec_scope ENDIF {
 
         debug_print("statement -> IF bool_expr THEN statement_loop ENDIF\n");
         scope++;
@@ -243,9 +243,7 @@ statement:
     
     }
 
-	//| IF bool_expr THEN {scope++;} statement_loop {scope--;} ELSE {scope++;} statement_loop ENDIF {scope--;} {
 	| IF bool_expr THEN inc_scope statement_loop dec_scope ELSE inc_scope statement_loop dec_scope ENDIF {
-	//| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF {
 
         debug_print("statement -> IF bool_expr THEN statement_loop ELSE statement_loop ENDIF\n");
         
@@ -253,9 +251,7 @@ statement:
 
     }
 
-	//| bool_expr BEGINLOOP {scope++;} statement_loop ENDLOOP {scope--;} {
 	| bool_expr BEGINLOOP inc_scope statement_loop ENDLOOP dec_scope {
-    //| bool_expr BEGINLOOP statement_loop ENDLOOP {
 
         debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n");
 
