@@ -21,6 +21,10 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include <stdlib.h>
+#include <stdio.h>
+#include <tuple>
+#include <utility>
 
 #ifndef FOO
 #define FOO
@@ -32,6 +36,7 @@ void debug_print_char(std::string msg, std::string c);
 void debug_print_int(std::string msg, int i);
 
 std::string concat(std::vector<std::string> strings, std::string prefix, std::string delim);
+
 
 
 	/* define the sturctures using as types for non-terminals */
@@ -55,11 +60,14 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
 #include <map>
 #include <regex>
 #include <set>
+
 yy::parser::symbol_type yylex();
 
 	/* define your symbol table, global variables,
 	 * list of keywords or any function you may need here */
 	
+    std::vector < std::pair<std::string, int> > variables;
+
 	/* end of your code */
 }
 
@@ -76,7 +84,7 @@ yy::parser::symbol_type yylex();
 %token <std::string> IDENTIFIER
 %token <int> NUMBER
 
-%type  <std::string> program function declaration mulop statement var
+%type  <std::string> program function declaration mulop statement var expression
 %type  <std::vector<std::string>> id_loop statement_loop declaration_loop var_loop
 
 
@@ -180,7 +188,10 @@ declaration:
 
         debug_print_int("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5);
 
-        //TODO
+        $$ += concat($1,                        // id_loop
+            ".[] ",                             // prefix
+            ", " + std::to_string($5) + "\n"    // postfix, using NUMBER
+        );
     }
 ;
 
@@ -191,8 +202,8 @@ id_loop:
         debug_print("id_loop -> IDENTIFIER");
         $$.push_back($1);
     }
-    |
-    id_loop COMMA IDENTIFIER {
+
+    | id_loop COMMA IDENTIFIER {
 
         debug_print("id_loop -> id_loop COMMA IDENTIFIER");
                         
@@ -206,7 +217,7 @@ id_loop:
 statement:	  var ASSIGN expression { debug_print("statement -> var ASSIGN expression\n"); }
 		| IF bool_expr THEN statement_loop ENDIF { debug_print("statement -> IF bool_expr THEN statement_loop ENDIF\n"); }
 		| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF { debug_print("statement -> IF bool_expr THEN statement_loop ELSE statement_loop ENDIF\n"); }
-		| WHILE bool_expr BEGINLOOP statement_loop ENDLOOP { debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n"); }
+		| bool_expr BEGINLOOP statement_loop ENDLOOP { debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n"); }
 		| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr { debug_print("statement -> DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr\n"); }
 
 		| READ var_loop {
@@ -307,10 +318,11 @@ var:
 
 	| IDENTIFIER L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
 
-        debug_print_char("var -> IDENTIFIER %s L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n", $1); }
+        debug_print_char("var -> IDENTIFIER %s L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n", $1);
 
-        //TODO
-	;
+        $$ = ".[] " + $1 + ", " + $3;
+    }
+;
 
 
 %%
