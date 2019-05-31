@@ -82,9 +82,9 @@ return		{ return yy::parser::make_RETURN(loc); }
 {IDENTIFIER}	{ return yy::parser::make_IDENTIFIER(yytext, loc); }
 {DIGIT}+	{ return yy::parser::make_NUMBER(atoi(yytext),loc); }
 
-{COMMENT}   {/*ignore comment*/}
-[ \t]+		{/*ignore whitespace*/ }
-"\n"		{/*ignore newline*/}
+{COMMENT}   {/*ignore comment*/ loc.step(); loc.lines(); }
+[ \t]+		{/*ignore whitespace*/ loc.step(); }
+"\n"		{/*ignore newline*/ loc.step(); loc.lines(); }
 
 	/* use this structure to pass the Token :
 	 * return yy::parser::make_TokenName(loc)
