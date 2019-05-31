@@ -4,7 +4,7 @@ endparams
 beginlocals
     m : integer;
     i, j : integer;
-    ## a : array[100] of integer;
+    a : array[100] of integer;
 endlocals
 beginbody
     read i, j;
