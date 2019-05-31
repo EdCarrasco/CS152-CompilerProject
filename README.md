@@ -3,12 +3,11 @@ CS152 Compiler Design Project
 
 # Usage
 
-Before first use, run the following:
+Please `cd` into the phase for the project you wish to run.
 
-```chmod +x compile_and_run.sh```
+## Phase 3
+Use `./usage.sh <min file>`. For example, to test phase3 with `read_write_test.min`, use the following once you are in `phase3/`:
 
-This specifies that the ```compile_and_run.sh``` file is executable.
+`./usage.sh read_write_test.min`
 
-From here, simply use ```./compile_and_run.sh```. You can pass it the name of a file to be parsed. For example,
-
-```./compile_and_run.sh invalid1.min"```
+To print out grammar rules, go to `mini_l.yy` and search for the phrase `#define debug`. Set to `true` to print out grammar rules _and_ machine code, or `false` to only print out the machine code.
