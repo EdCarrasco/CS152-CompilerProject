@@ -109,12 +109,26 @@ yy::parser::symbol_type yylex();
 	 * assume that your grammars start with prog_start
 	 */
 
-prog_start: program {std::cout << $1;}
-    ;
+prog_start:
 
-program:    /*epsilon*/ { debug_print("program -> epsilon\n"); $$ = "";}
-    | program function { debug_print("program -> program function\n"); $$ = $1 + $2;}
-    ;
+    program {
+
+        std::cout << $1;
+    }
+;
+
+program:
+
+    /*epsilon*/ %empty {
+
+        debug_print("program -> epsilon\n"); $$ = "";
+    }
+
+    | program function {
+        debug_print("program -> program function\n");
+        $$ = $1 + $2;
+    }
+;
 
 function:   FUNCTION IDENTIFIER SEMICOLON
             BEGINPARAMS declaration_loop ENDPARAMS
@@ -143,13 +157,14 @@ function:   FUNCTION IDENTIFIER SEMICOLON
 ;
 
 declaration_loop:
-    /*epsilon*/ {
+
+    /*epsilon*/ %empty {
 
         debug_print("declaration_loop -> epsilon\n");
         // don't add anything to vector
     }
-	|
-    declaration_loop declaration SEMICOLON {
+
+	| declaration_loop declaration SEMICOLON {
 
         debug_print("declaration_loop -> declaration_loop declaration SEMICOLON\n");
 
@@ -165,8 +180,8 @@ statement_loop:
         debug_print("statement_loop -> statement SEMICOLON\n");
         $$.push_back($1);
     }
-	|
-    statement_loop statement SEMICOLON {
+
+	| statement_loop statement SEMICOLON {
 
         debug_print("statement_loop -> statement_loop statement SEMICOLON\n");
 
@@ -184,8 +199,8 @@ declaration:
         $$ += concat($1, ". ", "\n");
                 
     }
-	|
-    id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
+    
+	| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
 
         debug_print_int("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5);
 
