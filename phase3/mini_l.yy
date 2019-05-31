@@ -67,6 +67,7 @@ yy::parser::symbol_type yylex();
 	 * list of keywords or any function you may need here */
 	
     std::vector < std::pair<std::string, int> > variables;
+    int scope = 0;
 
 	/* end of your code */
 }
@@ -214,11 +215,41 @@ id_loop:
     }
 ;
 
-statement:	  var ASSIGN expression { debug_print("statement -> var ASSIGN expression\n"); }
-		| IF bool_expr THEN statement_loop ENDIF { debug_print("statement -> IF bool_expr THEN statement_loop ENDIF\n"); }
-		| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF { debug_print("statement -> IF bool_expr THEN statement_loop ELSE statement_loop ENDIF\n"); }
-		| bool_expr BEGINLOOP statement_loop ENDLOOP { debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n"); }
-		| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr { debug_print("statement -> DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr\n"); }
+statement:
+
+    var ASSIGN expression { debug_print("statement -> var ASSIGN expression\n"); }
+
+	| IF bool_expr THEN statement_loop ENDIF {
+
+        debug_print("statement -> IF bool_expr THEN statement_loop ENDIF\n");
+        scope++;
+
+        // TODO
+    
+    }
+
+	//| IF bool_expr THEN {scope++;} statement_loop {scope--;} ELSE {scope++;} statement_loop ENDIF {scope--;} {
+	| IF bool_expr THEN inc_scope statement_loop dec_scope ELSE inc_scope statement_loop dec_scope ENDIF {
+	//| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF {
+
+        debug_print("statement -> IF bool_expr THEN statement_loop ELSE statement_loop ENDIF\n");
+        
+        // TODO
+
+    }
+
+	//| bool_expr BEGINLOOP {scope++;} statement_loop ENDLOOP {scope--;} {
+	| bool_expr BEGINLOOP inc_scope statement_loop ENDLOOP dec_scope {
+    //| bool_expr BEGINLOOP statement_loop ENDLOOP {
+
+        debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n");
+
+        // TODO
+    }
+
+	| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr {
+
+        debug_print("statement -> DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr\n"); }
 
 		| READ var_loop {
 
@@ -323,6 +354,9 @@ var:
         $$ = ".[] " + $1 + ", " + $3;
     }
 ;
+
+inc_scope: %empty { scope++; } ;
+dec_scope: %empty { scope--; } ;
 
 
 %%
