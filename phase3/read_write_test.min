@@ -5,6 +5,7 @@ beginlocals
     m : integer;
     i, j : integer;
     a : array[100] of integer;
+    b : array[69] of integer;
 endlocals
 beginbody
     read i, j;
