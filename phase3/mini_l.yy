@@ -63,10 +63,10 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
 
 yy::parser::symbol_type yylex();
 
-	/* define your symbol table, global variables,
+	/* define your symbol table, global identifiers,
 	 * list of keywords or any function you may need here */
 	
-    std::vector < std::pair<std::string, int> > variables;
+    std::vector < std::pair<std::string, int> > identifiers;  // string is identifier, int is scope
     int scope = 0;
 
 	/* end of your code */
@@ -217,6 +217,9 @@ id_loop:
 
         debug_print("id_loop -> IDENTIFIER");
         $$.push_back($1);
+
+        std::pair < std::string, int > p($1, scope);
+        identifiers.push_back(p);
     }
 
     | id_loop COMMA IDENTIFIER {
@@ -227,6 +230,9 @@ id_loop:
             $$.push_back(s);
                         
         $$.push_back($3);
+        
+        std::pair < std::string, int > p($3, scope);
+        identifiers.push_back(p);
     }
 ;
 
