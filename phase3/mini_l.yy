@@ -60,6 +60,9 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
 #include <map>
 #include <regex>
 #include <set>
+#include <algorithm>
+
+//extern yy::location loc;
 
 yy::parser::symbol_type yylex();
 
@@ -67,7 +70,7 @@ yy::parser::symbol_type yylex();
 	 * list of keywords or any function you may need here */
 	
     std::vector < std::pair<std::string, int> > variables;  // string is variable name, int is scope
-    std::vector < std::pair<std::string, int> > functions;  // string is function name, int is scope
+    std::vector < std::string > function_names;             // string is function name, int is scope
 
     int scope = 0;
 
@@ -116,6 +119,14 @@ prog_start:
     program {
 
         std::cout << $1;
+
+        // Print error if there isn't a main function
+        if (std::find(function_names.begin(), function_names.end(), "main") == function_names.end()) {
+
+            std::cerr << "Error, no main function defined" << std::endl;
+            //yy::parser::error(loc, "Error, no main");
+            //std::cerr << "Error line " << loc.begin.line << ": no main function" << std::endl;
+        }            
     }
 ;
 
@@ -129,6 +140,8 @@ program:
     | program function {
         debug_print("program -> program function\n");
         $$ = $1 + $2;
+
+
     }
 ;
 
@@ -143,7 +156,7 @@ function:   FUNCTION IDENTIFIER SEMICOLON
         debug_print("BEGINBODY statement_loop ENDBODY\n");
 
         $$ = "func " + $2 + "\n";
-        std::string temp;
+        function_names.push_back($2);
 
         // params declaration loop
         $$ += concat($5, "", "");
