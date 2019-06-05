@@ -123,9 +123,7 @@ prog_start:
         // Print error if there isn't a main function
         if (std::find(function_names.begin(), function_names.end(), "main") == function_names.end()) {
 
-            std::cerr << "Error, no main function defined" << std::endl;
-            //yy::parser::error(loc, "Error, no main");
-            //std::cerr << "Error line " << loc.begin.line << ": no main function" << std::endl;
+            std::cerr << "Error - no main function found" << std::endl;
         }            
     }
 ;
