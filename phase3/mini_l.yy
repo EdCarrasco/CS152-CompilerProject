@@ -101,6 +101,10 @@ yy::parser::symbol_type yylex();
     std::vector < std::string > function_names;             // string is function name, int is scope
 
     int scope = 0;
+    int maxScope = scope;
+    bool errorOccurred = false;
+
+
 
 	/* end of your code */
 }
@@ -427,7 +431,13 @@ var:
     }
 ;
 
-inc_scope: %empty { scope++; } ;
+inc_scope: %empty {
+
+    scope++; 
+    maxScope = (scope > maxScope ? scope : maxScope);
+    }
+;
+
 dec_scope: %empty { scope--; } ;
 
 
