@@ -56,6 +56,7 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
 	/* you may need these deader files 
 	 * add more header file if you need more
 	 */
+#include <iostream>
 #include <sstream>
 #include <map>
 #include <regex>
@@ -69,7 +70,34 @@ yy::parser::symbol_type yylex();
 	/* define your symbol table, global variables,
 	 * list of keywords or any function you may need here */
 	
-    std::vector < std::pair<std::string, int> > variables;  // string is variable name, int is scope
+    class Ident {
+
+    public:
+    
+        Ident(std::string str, int scope) :
+            str(str), scope(scope) {}
+
+        friend std::ostream& operator <<(std::ostream& out, const Ident &id) {
+
+            out << "Identifier \"" << id.str << "\", scope " << id.scope;
+
+            return out;
+        }
+
+        friend bool operator ==(const Ident& lhs, const Ident& rhs) {
+
+            return lhs.str == rhs.str && lhs.scope == rhs.scope;
+        }
+
+        std::string str;
+        int scope;
+    };
+
+    bool var_contains_str_only(std::string str);
+
+    bool var_contains(const Ident& id);
+
+    std::vector < Ident > variables;  // string is variable name, int is scope
     std::vector < std::string > function_names;             // string is function name, int is scope
 
     int scope = 0;
@@ -118,12 +146,13 @@ prog_start:
 
     program {
 
-        std::cout << $1;
+        std::cout << (errorOccurred ? "" : $1);
 
         // Print error if there isn't a main function
-        if (std::find(function_names.begin(), function_names.end(), "main") == function_names.end()) {
+        if (var_contains_str_only("main")) {
 
-            std::cerr << "Error - no main function found" << std::endl;
+            yy::parser::error(@1, "No main function defined");
+            //std::cerr << "Error - no main function found" << std::endl;
         }            
     }
 ;
@@ -231,8 +260,8 @@ id_loop:
         debug_print("id_loop -> IDENTIFIER");
         $$.push_back($1);
 
-        std::pair < std::string, int > p($1, scope);
-        variables.push_back(p);
+        Ident id($1, scope);
+        variables.push_back(id);
     }
 
     | id_loop COMMA IDENTIFIER {
@@ -244,8 +273,8 @@ id_loop:
                         
         $$.push_back($3);
         
-        std::pair < std::string, int > p($3, scope);
-        variables.push_back(p);
+        Ident id($3, scope);
+        variables.push_back(id);
     }
 ;
 
@@ -374,6 +403,19 @@ var:
 
         debug_print_char("var -> IDENTIFIER %s\n", $1);
 
+        Ident id($1, scope);
+
+        // TODO implement
+
+        // Look for p. If it's not contained,
+        // print an error that the variable p does not exist
+        // in the current scope
+        if (!var_contains(id)) {
+
+            //std::cerr << "Error at location " << @1 << ": variable \"" << $1 << "\" does not exist in the current scope." << std::endl;
+            yy::parser::error(@1, "Variable \"" + $1 + "\" does not exist in the current scope.");
+        }
+
         $$ = $1;
     }
 
@@ -427,4 +469,20 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
     return str;
 
 }
+
+bool var_contains_str_only(std::string str) {
+
+    for (Ident id : variables) {
+
+        if (id.str == str) return true;
+    }
+
+    return false;
+}
+
+bool var_contains(const Ident& id) {
+
+    return std::find(variables.begin(), variables.end(), id) != variables.end();
+}
+
 
