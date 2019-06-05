@@ -451,7 +451,8 @@ int main(int argc, char *argv[])
 
 void yy::parser::error(const yy::location& l, const std::string& m)
 {
-	std::cerr << l << ": " << m << std::endl;
+	std::cerr << "Error at location " << l << ": " << m << std::endl;
+    errorOccurred = true;
 }
 
 void debug_print(std::string msg) {
