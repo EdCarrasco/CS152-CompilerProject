@@ -74,34 +74,30 @@ yy::parser::symbol_type yylex();
 
     public:
     
-        Ident(std::string str, int scope) :
-            str(str), scope(scope) {}
+        Ident(std::string str) :
+            str(str) {}
 
         friend std::ostream& operator <<(std::ostream& out, const Ident &id) {
 
-            out << "Identifier \"" << id.str << "\", scope " << id.scope;
-
+            out << "Identifier \"" << id.str << "\"";
             return out;
         }
 
         friend bool operator ==(const Ident& lhs, const Ident& rhs) {
 
-            return lhs.str == rhs.str && lhs.scope == rhs.scope;
+            return lhs.str == rhs.str;
         }
 
         std::string str;
-        int scope;
     };
 
     bool var_contains_str_only(std::string str);
 
     bool var_contains(const Ident& id);
 
-    std::vector < Ident > variables;  // string is variable name, int is scope
-    std::vector < std::string > function_names;             // string is function name, int is scope
+    std::vector < Ident > variables;  // string is variable name
+    std::vector < std::string > function_names;             // string is function name
 
-    int scope = 0;
-    int maxScope = scope;
     bool errorOccurred = false;
 
 
@@ -264,7 +260,7 @@ id_loop:
         debug_print("id_loop -> IDENTIFIER");
         $$.push_back($1);
 
-        Ident id($1, scope);
+        Ident id($1);
         variables.push_back(id);
     }
 
@@ -277,7 +273,7 @@ id_loop:
                         
         $$.push_back($3);
         
-        Ident id($3, scope);
+        Ident id($3);
         variables.push_back(id);
     }
 ;
@@ -286,16 +282,15 @@ statement:
 
     var ASSIGN expression { debug_print("statement -> var ASSIGN expression\n"); }
 
-	| IF bool_expr THEN inc_scope statement_loop dec_scope ENDIF {
+	| IF bool_expr THEN statement_loop ENDIF {
 
         debug_print("statement -> IF bool_expr THEN statement_loop ENDIF\n");
-        scope++;
 
         // TODO
     
     }
 
-	| IF bool_expr THEN inc_scope statement_loop dec_scope ELSE inc_scope statement_loop dec_scope ENDIF {
+	| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF {
 
         debug_print("statement -> IF bool_expr THEN statement_loop ELSE statement_loop ENDIF\n");
         
@@ -303,7 +298,7 @@ statement:
 
     }
 
-	| bool_expr BEGINLOOP inc_scope statement_loop ENDLOOP dec_scope {
+	| bool_expr BEGINLOOP statement_loop ENDLOOP {
 
         debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n");
 
@@ -407,17 +402,16 @@ var:
 
         debug_print_char("var -> IDENTIFIER %s\n", $1);
 
-        Ident id($1, scope);
+        Ident id($1);
 
         // TODO implement
 
         // Look for p. If it's not contained,
         // print an error that the variable p does not exist
-        // in the current scope
         if (!var_contains(id)) {
 
-            //std::cerr << "Error at location " << @1 << ": variable \"" << $1 << "\" does not exist in the current scope." << std::endl;
-            yy::parser::error(@1, "Variable \"" + $1 + "\" does not exist in the current scope.");
+            //std::cerr << "Error at location " << @1 << ": variable \"" << $1 << "\" does not exist in the current context." << std::endl;
+            yy::parser::error(@1, "Variable \"" + $1 + "\" does not exist in the current context.");
         }
 
         $$ = $1;
@@ -431,6 +425,7 @@ var:
     }
 ;
 
+/*
 inc_scope: %empty {
 
     scope++; 
@@ -439,7 +434,7 @@ inc_scope: %empty {
 ;
 
 dec_scope: %empty { scope--; } ;
-
+*/
 
 %%
 
