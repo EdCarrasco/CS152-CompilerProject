@@ -1,3 +1,14 @@
+function fibonacci;
+beginparams
+	k : integer;
+endparams
+beginlocals
+endlocals
+beginbody
+	if (k <= 1) then return 1; endif;
+	return fibonacci(k - 1) + fibonacci(k - 2);
+endbody
+
 function main;
 beginparams
 endparams
@@ -11,5 +22,6 @@ beginbody
     read i, j;
     m := i + j;
     write m;
+    m := fibonacci(i);
 endbody
 
