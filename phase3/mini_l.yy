@@ -221,6 +221,7 @@ function:   FUNCTION IDENTIFIER SEMICOLON
 
         $$ = "func " + $2 + "\n";
         function_names.push_back($2);
+        std::cout << "Pushing back function name \"" << $2 << "\"" << std::endl;
 
         // params declaration loop
         $$ += concat($5, "", "");
@@ -419,15 +420,24 @@ mulop: 	  MULT { $$ = "MULT"; }
 	| MOD { $$ = "MOD"; }
 	;
 
-term:		  var { debug_print("term -> var\n"); }
+term:
+    var { debug_print("term -> var\n"); }
 		| SUB var { debug_print("term -> SUB var\n"); }
 		| NUMBER { debug_print_int("term -> NUMBER %d\n", $1); }
 		| SUB NUMBER { debug_print_int("term -> SUB NUMBER %d\n", $2); }
 		| L_PAREN expression R_PAREN { debug_print("term -> L_PAREN expression R_PAREN\n"); }
 		| SUB L_PAREN expression R_PAREN { debug_print("term -> SUB L_PAREN expression R_PAREN\n"); }
 		| IDENTIFIER L_PAREN R_PAREN { debug_print_char("term -> IDENTIFIER %s L_PAREN R_PAREN\n", $1); }
-		| IDENTIFIER L_PAREN expression_loop R_PAREN { debug_print_char("term -> IDENTIFIER %s L_PAREN expression_loop R_PAREN\n", $1); }
-		;
+	| IDENTIFIER L_PAREN expression_loop R_PAREN {
+
+        debug_print_char("term -> IDENTIFIER %s L_PAREN expression_loop R_PAREN\n", $1);
+    
+        if (!containsFuncName($1)) {
+
+            yy::parser::error(@1, "Attempted to call undeclared function \"" + $1 + "\"");
+        }
+    }
+;
 
 expression_loop:    expression { debug_print("expression_loop -> expression"); }
     | expression_loop COMMA expression { debug_print("expression_loop -> expression_loop COMMA expression"); }
@@ -483,7 +493,7 @@ int main(int argc, char *argv[])
 
 void yy::parser::error(const yy::location& l, const std::string& m)
 {
-	std::cerr << "Error at location " << l << ": " << m << std::endl;
+	std::cerr << "You fucked up at location " << l << ": " << m << std::endl;
     errorOccurred = true;
 }
 
@@ -536,6 +546,9 @@ bool containsIdentifier(const Ident& ident) {
 }
 
 bool containsFuncName(const std::string& funcName) {
+
+    std::cout << "In containsFuncName, size of function_names is " << function_names.size() << std::endl
+    << "funcName parameter is " << funcName << std::endl << std::endl;
 
     return std::find(function_names.begin(), function_names.end(), funcName)
         != function_names.end();
