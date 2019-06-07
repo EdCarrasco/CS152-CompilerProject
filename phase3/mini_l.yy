@@ -58,10 +58,12 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
 	 */
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <map>
 #include <regex>
 #include <set>
 #include <algorithm>
+#include <climits>
 
 //extern yy::location loc;
 
@@ -74,28 +76,62 @@ yy::parser::symbol_type yylex();
 
     public:
     
-        Ident(std::string str) :
-            str(str) {}
+        Ident(std::string str, int value = 0) :
+            str(str), int_value(value), id(static_id++),
+            tempName("__temp__" + std::to_string(id)) {}
 
         friend std::ostream& operator <<(std::ostream& out, const Ident &id) {
 
-            out << "Identifier \"" << id.str << "\"";
+            out << "Identifier \"" << id.str << "\",";
+
+            out << "Int value: ";
+            int i = id.int_value;
+            if (i == INT_MAX)
+                out << "UNDEFINED";
+            else
+                out << i;
+
             return out;
         }
 
         friend bool operator ==(const Ident& lhs, const Ident& rhs) {
 
-            return lhs.str == rhs.str;
+            // Test for equivalence
+            return lhs.getIdentifier() == rhs.getIdentifier();
+            //return lhs.getTempName().compare(rhs.getTempName()) == 0;
+            //return lhs.getTempName() == rhs.getTempName();
+            //return lhs.id == rhs.id;
         }
 
+        std::string getIdentifier() const {
+
+            return str;
+        }
+
+        
+        std::string getTempName() const {
+
+            return tempName;
+        }
+
+    private:
+
+        static int static_id;
+
+        const std::string tempName;
         std::string str;
+        int int_value;
+        int id;
+        
     };
 
-    bool var_contains_str_only(std::string str);
+    bool containsIdentifierName(const std::string& name);
 
-    bool var_contains(const Ident& id);
+    bool containsIdentifier(const Ident& ident);
 
-    std::vector < Ident > variables;  // string is variable name
+    bool containsFuncName(const std::string& funcName);
+
+    std::vector < Ident > variables;                        // string is variable name
     std::vector < std::string > function_names;             // string is function name
 
     bool errorOccurred = false;
@@ -149,7 +185,8 @@ prog_start:
         std::cout << (errorOccurred ? "" : $1);
 
         // Print error if there isn't a main function
-        if (var_contains_str_only("main")) {
+        //if (var_contains_str_only("main")) {
+        if (!containsFuncName("main")) {
 
             yy::parser::error(@1, "No main function defined");
             //std::cerr << "Error - no main function found" << std::endl;
@@ -260,7 +297,7 @@ id_loop:
         debug_print("id_loop -> IDENTIFIER");
         $$.push_back($1);
 
-        Ident id($1);
+        Ident id($1, INT_MAX);
         variables.push_back(id);
     }
 
@@ -273,7 +310,7 @@ id_loop:
                         
         $$.push_back($3);
         
-        Ident id($3);
+        Ident id($3, INT_MAX);
         variables.push_back(id);
     }
 ;
@@ -408,7 +445,7 @@ var:
 
         // Look for p. If it's not contained,
         // print an error that the variable p does not exist
-        if (!var_contains(id)) {
+        if (!containsIdentifierName(id.getIdentifier())) {
 
             //std::cerr << "Error at location " << @1 << ": variable \"" << $1 << "\" does not exist in the current context." << std::endl;
             yy::parser::error(@1, "Variable \"" + $1 + "\" does not exist in the current context.");
@@ -476,19 +513,34 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
 
 }
 
-bool var_contains_str_only(std::string str) {
+bool containsIdentifierName(const std::string& name) {
 
     for (Ident id : variables) {
 
-        if (id.str == str) return true;
+        if (id.getIdentifier() == name) return true;
     }
 
     return false;
 }
 
-bool var_contains(const Ident& id) {
 
-    return std::find(variables.begin(), variables.end(), id) != variables.end();
+bool containsIdentifier(const Ident& ident) {
+
+    for (Ident this_id : variables) {
+
+        if (ident == this_id) return true;
+        //if (ident.getIdentifier() == this_id.getIdentifier()) return true;
+    }
+
+    return false;
 }
+
+bool containsFuncName(const std::string& funcName) {
+
+    return std::find(function_names.begin(), function_names.end(), funcName)
+        != function_names.end();
+}
+
+int Ident::static_id = 0;
 
 
