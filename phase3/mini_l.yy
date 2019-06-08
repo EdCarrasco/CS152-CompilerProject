@@ -29,7 +29,7 @@
 #ifndef FOO
 #define FOO
 
-#define debug false
+#define debug true
 
 void debug_print(std::string msg);
 void debug_print_char(std::string msg, std::string c);
@@ -100,9 +100,6 @@ yy::parser::symbol_type yylex();
 
             // Test for equivalence
             return lhs.getIdentifier() == rhs.getIdentifier();
-            //return lhs.getTempName().compare(rhs.getTempName()) == 0;
-            //return lhs.getTempName() == rhs.getTempName();
-            //return lhs.id == rhs.id;
         }
 
         std::string getIdentifier() const {
@@ -291,21 +288,55 @@ declaration:
 
         debug_print("declaration -> id_loop COLON INTEGER\n");
 
-        $$ += concat($1, ". ", "\n");
-                
+        for (std::string thisName : $1) {
+
+            Ident id(thisName, INT_MAX, false);
+
+            // Check if is repeat identifier
+            if (containsIdentifier(id)) {
+
+                yy::parser::error(@1, "Multiple definitions of variable \"" + thisName + "\"");
+            }
+
+            // Only account for identifier if it hasn't yet been declared
+            else {
+
+                variables.push_back(id);
+                $$ += concat($1, ". ", "\n");
+            }
+        }    
     }
 
-	| { isDeclaringArray = true; } id_loop { isDeclaringArray = false; } COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
+	| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
 
         debug_print_int("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5);
 
-        $$ += concat($2,                        // id_loop
-            ".[] ",                             // prefix
-            ", " + std::to_string($7) + "\n"    // postfix, using NUMBER
-        );
+        for (std::string thisName : $1) {
 
-        if ($7 <= 0) {
-            yy::parser::error(@7, "Array \"" + $$ + "\" must be of size greater than zero.");
+            Ident id(thisName, INT_MAX, true);
+
+            // Check if is repeat identifier
+            if (containsIdentifier(id)) {
+
+                yy::parser::error(@1, "Multiple definitions of variable \"" + thisName + "\"");
+            }
+
+            // Only keep track of variable if it is not repeat identifier
+            // To be clear, we can keep track of it even if NUMBER <= 0,
+            // just print out the error underneath.
+            else {
+
+                variables.push_back(id);
+                $$ += concat($1,                            // id_loop
+                    ".[] ",                                 // prefix
+                    ", " + std::to_string($5) + "\n");      // postfix, using NUMBER
+            }
+
+            // Log error if number is valid
+            if ($5 <= 0) {
+
+                yy::parser::error(@5, "Array \"" + $$ + "\" must be of size greater than zero.");
+            }
         }
     }
 ;
@@ -316,19 +347,6 @@ id_loop:
 
         debug_print("id_loop -> IDENTIFIER");
         $$.push_back($1);
-
-        Ident id($1, INT_MAX, isDeclaringArray);
-
-        if (containsIdentifier(id)) {
-
-            yy::parser::error(@1, "Multiple declarations of variable \"" + $1 + "\"");
-
-        }
-
-        else {
-
-            variables.push_back(id);
-        }
     }
 
     | id_loop COMMA IDENTIFIER {
@@ -336,26 +354,11 @@ id_loop:
         debug_print("id_loop -> id_loop COMMA IDENTIFIER");
                
         // Maintain id_loop's vector         
-        for (std::string s : $1)
+        for (std::string s : $1) {
             $$.push_back(s);
+        }
                         
         $$.push_back($3);
-        
-
-
-        // Push back id,
-        // only if it hasn't previously been declared
-        Ident id($3, INT_MAX);
-
-        if (containsIdentifier(id)) {
-        // if (containsIdentifierName(id.getIdentifier())) {
-
-            yy::parser::error(@3, "Multiple declarations of variable \"" + $3 + "\"");
-
-        } else {
-
-            variables.push_back(id);
-        }
     }
 ;
 
@@ -524,6 +527,9 @@ inc_scope: %empty {
 
 dec_scope: %empty { scope--; } ;
 */
+
+// going_into_loop: %empty { currentlyInLoop = true; }
+// returning_from_loop: %empty { currentlyInLoop = false; }
 
 %%
 
