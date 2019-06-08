@@ -297,20 +297,44 @@ id_loop:
         $$.push_back($1);
 
         Ident id($1, INT_MAX);
-        variables.push_back(id);
+
+        if (containsIdentifier(id)) {
+
+            yy::parser::error(@1, "Multiple declarations of variable \"" + $1 + "\"");
+
+        }
+
+        else {
+
+            variables.push_back(id);
+        }
     }
 
     | id_loop COMMA IDENTIFIER {
 
         debug_print("id_loop -> id_loop COMMA IDENTIFIER");
-                        
+               
+        // Maintain id_loop's vector         
         for (std::string s : $1)
             $$.push_back(s);
                         
         $$.push_back($3);
         
+
+
+        // Push back id,
+        // only if it hasn't previously been declared
         Ident id($3, INT_MAX);
-        variables.push_back(id);
+
+        if (containsIdentifier(id)) {
+        // if (containsIdentifierName(id.getIdentifier())) {
+
+            yy::parser::error(@3, "Multiple declarations of variable \"" + $3 + "\"");
+
+        } else {
+
+            variables.push_back(id);
+        }
     }
 ;
 
