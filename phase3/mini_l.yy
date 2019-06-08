@@ -209,7 +209,7 @@ program:
     }
 ;
 
-function:   FUNCTION IDENTIFIER SEMICOLON
+function:   FUNCTION IDENTIFIER { function_names.push_back($2); } SEMICOLON
             BEGINPARAMS declaration_loop ENDPARAMS
             BEGINLOCALS declaration_loop ENDLOCALS
             BEGINBODY statement_loop ENDBODY {
@@ -220,17 +220,15 @@ function:   FUNCTION IDENTIFIER SEMICOLON
         debug_print("BEGINBODY statement_loop ENDBODY\n");
 
         $$ = "func " + $2 + "\n";
-        function_names.push_back($2);
-        std::cout << "Pushing back function name \"" << $2 << "\"" << std::endl;
 
         // params declaration loop
-        $$ += concat($5, "", "");
+        $$ += concat($6, "", "");
 
         // locals declaration loop
-        $$ += concat($8, "", "");
+        $$ += concat($9, "", "");
 
         // body statement loop
-        $$ += concat($11, "", "");
+        $$ += concat($12, "", "");
 
         $$ += "endfunc\n";
     }
@@ -457,7 +455,6 @@ var:
         // print an error that the variable p does not exist
         if (!containsIdentifierName(id.getIdentifier())) {
 
-            //std::cerr << "Error at location " << @1 << ": variable \"" << $1 << "\" does not exist in the current context." << std::endl;
             yy::parser::error(@1, "Variable \"" + $1 + "\" does not exist in the current context.");
         }
 
@@ -493,7 +490,7 @@ int main(int argc, char *argv[])
 
 void yy::parser::error(const yy::location& l, const std::string& m)
 {
-	std::cerr << "You fucked up at location " << l << ": " << m << std::endl;
+	std::cerr << "Error at location " << l << ": " << m << std::endl;
     errorOccurred = true;
 }
 
@@ -539,16 +536,12 @@ bool containsIdentifier(const Ident& ident) {
     for (Ident this_id : variables) {
 
         if (ident == this_id) return true;
-        //if (ident.getIdentifier() == this_id.getIdentifier()) return true;
     }
 
     return false;
 }
 
 bool containsFuncName(const std::string& funcName) {
-
-    std::cout << "In containsFuncName, size of function_names is " << function_names.size() << std::endl
-    << "funcName parameter is " << funcName << std::endl << std::endl;
 
     return std::find(function_names.begin(), function_names.end(), funcName)
         != function_names.end();
