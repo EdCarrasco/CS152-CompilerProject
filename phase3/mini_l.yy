@@ -64,6 +64,7 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
 #include <set>
 #include <algorithm>
 #include <climits>
+#include <unordered_set>
 
 //extern yy::location loc;
 
@@ -133,6 +134,9 @@ yy::parser::symbol_type yylex();
 
     std::vector < Ident > variables;                        // string is variable name
     std::vector < std::string > function_names;             // string is function name
+    std::unordered_set < std::string > keywords;            // reserved keywords
+    keywords.insert("if");
+
 
     bool errorOccurred = false;
 
