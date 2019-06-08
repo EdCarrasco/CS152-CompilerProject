@@ -286,6 +286,10 @@ declaration:
             ".[] ",                             // prefix
             ", " + std::to_string($5) + "\n"    // postfix, using NUMBER
         );
+
+        if ($5 <= 0) {
+            yy::parser::error(@1, "Array \"" + $$ + "\" must be of size greater than zero.");
+        }
     }
 ;
 
