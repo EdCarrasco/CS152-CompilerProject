@@ -135,8 +135,8 @@ yy::parser::symbol_type yylex();
     std::vector < Ident > variables;                        // string is variable name
     std::vector < std::string > function_names;             // string is function name
     std::unordered_set < std::string > keywords;            // reserved keywords
-    keywords.insert("if");
 
+    void populateKeywords();
 
     bool errorOccurred = false;
 
@@ -184,15 +184,15 @@ yy::parser::symbol_type yylex();
 
 prog_start:
 
-    program {
+    { populateKeywords(); } program {
 
-        std::cout << (errorOccurred ? "" : $1);
+        std::cout << (errorOccurred ? "" : $2);
 
         // Print error if there isn't a main function
         //if (var_contains_str_only("main")) {
         if (!containsFuncName("main")) {
 
-            yy::parser::error(@1, "No main function defined");
+            yy::parser::error(@2, "No main function defined");
             //std::cerr << "Error - no main function found" << std::endl;
         }            
     }
@@ -581,4 +581,7 @@ bool containsFuncName(const std::string& funcName) {
 
 int Ident::static_id = 0;
 
+void populateKeywords() {
 
+    keywords.insert("if");
+}
