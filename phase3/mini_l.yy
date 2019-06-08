@@ -77,9 +77,10 @@ yy::parser::symbol_type yylex();
 
     public:
     
-        Ident(std::string str, int value = 0) :
+        Ident(std::string str, int value = 0, bool isArray=false) :
             str(str), int_value(value), id(static_id++),
-            tempName("__temp__" + std::to_string(id)) {}
+            tempName("__temp__" + std::to_string(id)),
+            isArray(isArray) {}
 
         friend std::ostream& operator <<(std::ostream& out, const Ident &id) {
 
@@ -123,6 +124,7 @@ yy::parser::symbol_type yylex();
         std::string str;
         int int_value;
         int id;
+        const bool isArray;
         
     };
 
@@ -140,6 +142,7 @@ yy::parser::symbol_type yylex();
 
     bool errorOccurred = false;
     bool currentlyInLoop = false;
+    bool isDeclaringArray = false;
 
     bool isKeyword(std::string);
 
@@ -292,17 +295,17 @@ declaration:
                 
     }
 
-	| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
+	| { isDeclaringArray = true; } id_loop { isDeclaringArray = false; } COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
 
         debug_print_int("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5);
 
-        $$ += concat($1,                        // id_loop
+        $$ += concat($2,                        // id_loop
             ".[] ",                             // prefix
-            ", " + std::to_string($5) + "\n"    // postfix, using NUMBER
+            ", " + std::to_string($7) + "\n"    // postfix, using NUMBER
         );
 
-        if ($5 <= 0) {
-            yy::parser::error(@5, "Array \"" + $$ + "\" must be of size greater than zero.");
+        if ($7 <= 0) {
+            yy::parser::error(@7, "Array \"" + $$ + "\" must be of size greater than zero.");
         }
     }
 ;
@@ -314,7 +317,7 @@ id_loop:
         debug_print("id_loop -> IDENTIFIER");
         $$.push_back($1);
 
-        Ident id($1, INT_MAX);
+        Ident id($1, INT_MAX, isDeclaringArray);
 
         if (containsIdentifier(id)) {
 
