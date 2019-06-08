@@ -590,8 +590,8 @@ bool containsFuncName(const std::string& funcName) {
 
 int Ident::static_id = 0;
 
-bool isKeyword(std::string) {
-    return keywords.find(string) != keywords.end();
+bool isKeyword(std::string name) {
+    return keywords.find(name) != keywords.end();
 }
 
 void populateKeywords() {
