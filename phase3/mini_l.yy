@@ -140,6 +140,8 @@ yy::parser::symbol_type yylex();
 
     bool errorOccurred = false;
 
+    bool isKeyword(std::string);
+
 
 
 	/* end of your code */
@@ -213,7 +215,14 @@ program:
     }
 ;
 
-function:   FUNCTION IDENTIFIER { function_names.push_back($2); } SEMICOLON
+function:   FUNCTION IDENTIFIER { 
+
+                function_names.push_back($2); 
+                if (isKeyword($2)) { 
+                    yy::parser::error(@2, "Function name \"" + $2 + "\" cannot be named the same as a keyword.");
+                }
+
+        } SEMICOLON
             BEGINPARAMS declaration_loop ENDPARAMS
             BEGINLOCALS declaration_loop ENDLOCALS
             BEGINBODY statement_loop ENDBODY {
@@ -292,7 +301,7 @@ declaration:
         );
 
         if ($5 <= 0) {
-            yy::parser::error(@1, "Array \"" + $$ + "\" must be of size greater than zero.");
+            yy::parser::error(@5, "Array \"" + $$ + "\" must be of size greater than zero.");
         }
     }
 ;
@@ -581,7 +590,37 @@ bool containsFuncName(const std::string& funcName) {
 
 int Ident::static_id = 0;
 
+bool isKeyword(std::string) {
+    return keywords.find(string) != keywords.end();
+}
+
 void populateKeywords() {
 
+    keywords.insert("function");
+    keywords.insert("beginparams");
+    keywords.insert("endparams");
+    keywords.insert("beginlocals");
+    keywords.insert("endlocals");
+    keywords.insert("beginbody");
+    keywords.insert("endbody");
+    keywords.insert("integer");
+    keywords.insert("array");
+    keywords.insert("of");
     keywords.insert("if");
+    keywords.insert("then");
+    keywords.insert("endif");
+    keywords.insert("else");
+    keywords.insert("while");
+    keywords.insert("do");
+    keywords.insert("beginloop");
+    keywords.insert("endloop");
+    keywords.insert("continue");
+    keywords.insert("read");
+    keywords.insert("write");
+    keywords.insert("and");
+    keywords.insert("or");
+    keywords.insert("not");
+    keywords.insert("true");
+    keywords.insert("false");
+    keywords.insert("return");
 }
