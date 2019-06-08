@@ -139,6 +139,7 @@ yy::parser::symbol_type yylex();
     void populateKeywords();
 
     bool errorOccurred = false;
+    bool currentlyInLoop = false;
 
     bool isKeyword(std::string);
 
