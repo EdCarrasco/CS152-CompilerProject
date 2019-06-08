@@ -16,3 +16,4 @@ phase3/parser
 *.hh
 parser.output
 *.tab.cc
+*.txt
