@@ -419,25 +419,6 @@ statement:
 
         debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n");
 
-        /*
-
-        : __label__0
-
-        = __temp__0, a   // bool_expr
-        = __temp__1, b
-        < __temp__2, __temp__0, __temp__1
-
-        ?:= __label__1, __temp__2
-        := __label__2
-        : __label__1
-
-            // statement_loop
-
-        := __label__0
-        : __label__2
-
-        */
-
         StatementStruct css;
         css.begin_label = generateTempLabel();
         std::string middle_label = generateTempLabel();
@@ -452,13 +433,12 @@ statement:
         $$.code.push_back(":= " + css.end_label);
         $$.code.push_back(": " + middle_label);
 
-        for ( auto statement : $4 ){
-            for ( auto line : statement.code ){
-                $$.code.push_back(line);
-            }
-        }
 
-        //$$.code.insert($$.code.end(), $4.code.begin(), $4.code.end()); // statement_loop code
+
+        for (StatementStruct thisStatement : $4) {
+
+            $$.code.insert($$.code.end(), thisStatement.code.begin(), thisStatement.code.end());
+        }
 
         $$.code.push_back(":= " + css.begin_label);
         $$.code.push_back(": " + css.end_label);
