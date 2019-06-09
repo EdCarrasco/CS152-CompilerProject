@@ -80,7 +80,7 @@
         }
     };
 
-    struct CtrlStatementStruct {
+    struct StatementStruct {
 
     public:
 
@@ -150,10 +150,14 @@
 %token <std::string> IDENTIFIER
 %token <int> NUMBER
 
-%type  <ExprStruct> program function declaration statement var expression term mult_expr
-%type  <std::vector<ExprStruct>> statement_loop declaration_loop var_loop
+%type  <std::vector<ExprStruct>> declaration_loop var_loop
+%type  <ExprStruct> program declaration var expression term mult_expr bool_expr relation_and_expr relation_expr
+
+%type  <std::vector<StatementStruct>> statement_loop
+%type  <StatementStruct> statement function
+
 %type  <std::vector<std::string>> id_loop
-%type  <std::string> mulop
+%type  <std::string> mulop comp
 
 
 %right ASSIGN
@@ -230,7 +234,7 @@ function:
         std::string function_name = $2;
         std::vector< ExprStruct > params = $6;
         std::vector< ExprStruct > locals = $9;
-        std::vector< ExprStruct > body   = $12;
+        std::vector< StatementStruct > body   = $12;
 
         //$$ = "func " + function_name + "\n";
         $$.code.push_back("func " + function_name);
@@ -251,7 +255,7 @@ function:
 
         // body statement loop
         // $$.code.insert($$.code.end(), body.begin(), body.end());
-        for (ExprStruct this_expr_struct : body) {
+        for (StatementStruct this_expr_struct : body) {
 
             $$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
         }
@@ -392,23 +396,77 @@ statement:
 
         debug_print("statement -> IF bool_expr THEN statement_loop ENDIF\n");
 
-        // TODO
+        
     
     }
 
 	| IF bool_expr THEN statement_loop ELSE statement_loop ENDIF {
 
         debug_print("statement -> IF bool_expr THEN statement_loop ELSE statement_loop ENDIF\n");
-        
-        // TODO
+
+        /*
+        $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end());
+        $$.reg_name = generateTempReg();
+
+        std::string endif_label = generateTempLabel();
+
+        $$.code.push_back(": " + endif_label);
+        */
 
     }
 
-	| bool_expr BEGINLOOP statement_loop ENDLOOP {
+	| WHILE bool_expr BEGINLOOP statement_loop ENDLOOP {
 
         debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n");
 
-        // TODO
+        /*
+
+        : __label__0
+
+        = __temp__0, a   // bool_expr
+        = __temp__1, b
+        < __temp__2, __temp__0, __temp__1
+
+        ?:= __label__1, __temp__2
+        := __label__2
+        : __label__1
+
+            // statement_loop
+
+        := __label__0
+        : __label__2
+
+        */
+
+        StatementStruct css;
+        css.begin_label = generateTempLabel();
+        std::string middle_label = generateTempLabel();
+        css.end_label = generateTempLabel();
+
+
+        $$.code.push_back(": " + css.begin_label);
+
+        $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end()); // bool_expr code
+
+        $$.code.push_back("?:= " + middle_label + ", " + $2.reg_name);
+        $$.code.push_back(":= " + css.end_label);
+        $$.code.push_back(": " + middle_label);
+
+        for ( auto statement : $4 ){
+            for ( auto line : statement.code ){
+                $$.code.push_back(line);
+            }
+        }
+
+        //$$.code.insert($$.code.end(), $4.code.begin(), $4.code.end()); // statement_loop code
+
+        $$.code.push_back(":= " + css.begin_label);
+        $$.code.push_back(": " + css.end_label);
+
+
+        $$.begin_label = css.begin_label;
+        $$.end_label = css.end_label;
+
     }
 
 	| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr {
@@ -466,30 +524,74 @@ var_loop:
     }
 ;
 
-bool_expr:	  relation_and_expr { debug_print("bool_expr -> relation_and_expr\n"); }
-        | bool_expr OR relation_and_expr { debug_print("bool_expr -> bool_expr OR relation_and_expr\n"); }
-        ;
+bool_expr:	 
+    relation_and_expr { 
+        debug_print("bool_expr -> relation_and_expr\n");
+        $$ = $1;
 
-relation_and_expr:	  relation_expr { debug_print("relation_and_expr -> relation_expr\n"); }
-        | relation_and_expr AND relation_expr { debug_print("relation_and_expr -> relation_and_expr AND relation_expr\n"); }
-        ;
+    }
+    | bool_expr OR relation_and_expr {
+        debug_print("bool_expr -> bool_expr OR relation_and_expr\n"); 
 
-relation_expr:	  expression comp expression { debug_print("relation_expr -> expression comp expression\n"); }
-		| NOT expression comp expression { debug_print("relation_expr -> NOT expression comp expression\n"); }
-		| TRUE { debug_print("relation_expr -> TRUE\n"); }
-		| NOT TRUE { debug_print("relation_expr -> NOT TRUE\n"); }
-		| FALSE { debug_print("relation_expr -> FALSE\n"); }
-		| NOT FALSE { debug_print("relation_expr -> NOT FALSE\n"); }
-		| L_PAREN bool_expr R_PAREN { debug_print("relation_expr -> L_PAREN bool_expr R_PAREN\n"); }
-		;
+    }
+;
 
-comp:		  EQ { debug_print("comp -> EQ\n"); }
-		| NEQ { debug_print("comp -> NEQ\n"); }
-		| LT { debug_print("comp -> LT\n"); }
-		| GT { debug_print("comp -> GT\n"); }
-		| LTE { debug_print("comp -> LTE\n"); }
-		| GTE { debug_print("comp -> GTE\n"); }
-		;
+relation_and_expr:
+    relation_expr { 
+        debug_print("relation_and_expr -> relation_expr\n"); 
+        $$ = $1;
+
+    }
+    | relation_and_expr AND relation_expr { 
+        debug_print("relation_and_expr -> relation_and_expr AND relation_expr\n"); 
+
+    }
+;
+
+relation_expr:
+    expression comp expression {
+        debug_print("relation_expr -> expression comp expression\n");
+
+        $$.code.insert($$.code.end(), $1.code.begin(), $1.code.end());
+        $$.code.insert($$.code.end(), $3.code.begin(), $3.code.end());
+
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+
+        $$.code.push_back($2 + " " + $$.reg_name + ", " + $1.reg_name + ", " + $3.reg_name);
+
+    }
+	| NOT expression comp expression { 
+        debug_print("relation_expr -> NOT expression comp expression\n");
+
+    }
+	| TRUE { 
+        debug_print("relation_expr -> TRUE\n"); }
+	| NOT TRUE { debug_print("relation_expr -> NOT TRUE\n"); 
+
+    }
+	| FALSE { 
+        debug_print("relation_expr -> FALSE\n"); 
+
+    }
+	| NOT FALSE { 
+        debug_print("relation_expr -> NOT FALSE\n"); 
+
+    }
+	| L_PAREN bool_expr R_PAREN { 
+        debug_print("relation_expr -> L_PAREN bool_expr R_PAREN\n"); 
+
+    }
+;
+
+comp:
+    EQ { $$  = "=="; }
+	| NEQ { $$  = "!="; }
+	| LT { $$  = "<"; }
+	| GT { $$  = ">"; }
+	| LTE { $$  = "<="; }
+	| GTE { $$  = ">="; }
+;
 
 expression: 
     mult_expr { debug_print("expression -> mult_expr\n"); 
@@ -567,8 +669,6 @@ term:
 
         $$ = $2;
 
-
-
         std::string twoTemp = generateTempReg();
         $$.code.push_back(". " + twoTemp);
         $$.code.push_back("= " + twoTemp + ", " + "2");
@@ -590,21 +690,6 @@ term:
 
         // Now, do $$ -= doubleTemp
         $$.code.push_back("- " + $$.reg_name + ", " + $$.reg_name + ", " + doubleTemp);
-
-
-
-        // $$.code.push_back("* " + $$.reg_name + ", " + $2.reg_name + ", " + negTemp);
-
-        // $$.reg_name = generateTempReg();
-        // $$.code.push_back(". " + $$.reg_name);
-        // $$.code.push_back("= " + $$.reg_name + ", " + $2.reg_name);
-
-        // $$ = $2;
-        // $$.reg_name = generateTempReg();
-        // $$.code.push_back(". " + $$.reg_name);
-        // $$.code.push_back("* " + $2.reg_name + ", " + $2.reg_name + ", " + "-1");
-        // $$.code.push_back("= " + $$.reg_name + ", " + $2.reg_name);
-
     }
 	| NUMBER {
 
@@ -618,7 +703,10 @@ term:
         // $$.reg_name = es.reg_name;
         //$$ = es;
     }
-	| SUB NUMBER { debug_print_int("term -> SUB NUMBER %d\n", $2); }
+	| SUB NUMBER { 
+        debug_print_int("term -> SUB NUMBER %d\n", $2); 
+
+    }
 	| L_PAREN expression R_PAREN { debug_print("term -> L_PAREN expression R_PAREN\n"); }
 	| SUB L_PAREN expression R_PAREN { debug_print("term -> SUB L_PAREN expression R_PAREN\n"); }
 	| IDENTIFIER L_PAREN R_PAREN { debug_print_char("term -> IDENTIFIER %s L_PAREN R_PAREN\n", $1); }
