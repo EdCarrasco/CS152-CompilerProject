@@ -10,6 +10,7 @@ endlocals
 beginbody
     i := 5;
     read i, j;
+    m := i + 2;
     write m;
 endbody
 
