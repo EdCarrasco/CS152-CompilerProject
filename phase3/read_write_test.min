@@ -2,15 +2,21 @@ function main;
 beginparams
 endparams
 beginlocals
-    m : integer;
+    m, n : integer;
     i, j : integer;
     a : array[100] of integer;
     b : array[69] of integer;
 endlocals
 beginbody
-    i := 5;
-    read i, j;
-    m := i + 2;
-    write m;
+##    i := 5;
+##    i := 5;
+##   read i, j;
+##    m := i + 2;
+##    n := 3 * 5 / 3;
+    
+    i := 3;
+    j := -i + 3;
+    write j;
+##    write m;
 endbody
 
