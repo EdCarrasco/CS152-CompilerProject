@@ -8,6 +8,7 @@ beginlocals
     b : array[69] of integer;
 endlocals
 beginbody
+    i := 5;
     read i, j;
     write m;
 endbody
