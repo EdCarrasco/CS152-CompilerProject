@@ -92,6 +92,7 @@
 
     std::ostream& operator <<(std::ostream& out, const std::vector< ExprStruct > & printMe);
 
+    std::ostream& operator <<(std::ostream& out, const std::vector< std::string> & printMe);
 	/* define the sturctures using as types for non-terminals */
 
 	/* end the structures for non-terminal types */
@@ -149,9 +150,10 @@
 %token <std::string> IDENTIFIER
 %token <int> NUMBER
 
-%type  <ExprStruct> program function declaration mulop statement var expression term mult_expr
+%type  <ExprStruct> program function declaration statement var expression term mult_expr
 %type  <std::vector<ExprStruct>> statement_loop declaration_loop var_loop
 %type  <std::vector<std::string>> id_loop
+%type  <std::string> mulop
 
 
 %right ASSIGN
@@ -439,7 +441,7 @@ statement:
         for (ExprStruct this_expr_struct : $2) {
             //$$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
             // $$.code.push_back(".> " + this_expr_struct.original_name);
-            $$.code.push_back(".< " + this_expr_struct.reg_name);
+            $$.code.push_back(".> " + this_expr_struct.reg_name);
         }
     }
 
@@ -494,17 +496,30 @@ expression:
         $$ = $1;
         //$$.code.push_back("= " + $$.reg_name + ", " + $1.reg_name);
     }
-    | expression ADD mult_expr { debug_print("expression -> expression ADD mult_expr\n"); 
+    | expression ADD mult_expr {
+
+        debug_print("expression -> expression ADD mult_expr\n"); 
 
         $$ = $1;
         $$.reg_name = generateTempReg();
         // $$.code.insert($$.code.end(), $1.code.begin(), $1.code.end());
         $$.code.insert($$.code.end(), $3.code.begin(), $3.code.end());
+        $$.code.push_back(". " + $$.reg_name);
         $$.code.push_back("+ " + $$.reg_name + ", " + $1.reg_name + ", " + $3.reg_name);
 
 
     }
-    | expression SUB mult_expr { debug_print("expression -> expression SUB mult_expr\n"); }
+    | expression SUB mult_expr {
+
+        debug_print("expression -> expression SUB mult_expr\n");
+
+        $$ = $1;
+        $$.reg_name = generateTempReg();
+        // $$.code.insert($$.code.end(), $1.code.begin(), $1.code.end());
+        $$.code.insert($$.code.end(), $3.code.begin(), $3.code.end());
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("- " + $$.reg_name + ", " + $1.reg_name + ", " + $3.reg_name);
+    }
 ;
 
 mult_expr:
@@ -514,15 +529,26 @@ mult_expr:
         $$ = $1;
     }
 
-    | mult_expr mulop term { debug_print_char("mult_expr -> mult_expr %s term\n", $2.reg_name); 
+    | mult_expr mulop term {
+        debug_print_char("mult_expr -> mult_expr %s term\n", $2); 
+        $$.reg_name = generateTempReg();
+        $$.code.insert($$.code.end(), $1.code.begin(), $1.code.end());
+        $$.code.insert($$.code.end(), $3.code.begin(), $3.code.end());
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back($2 + " " + $$.reg_name + ", " + $1.reg_name + ", " + $3.reg_name);
 
+        // std::cout << "In mult_expr -> mult_expr mulop term:" << std::endl
+        //     << "term.code.size(): " << $3.code.size() << std::endl
+        //     << "term.code[0]: " << $3.code[0] << ", term.code[1]" << $3.code[1] << std::endl
+        //     << std::endl;
     }
 ;
 
-mulop: 	  MULT { $$.code.push_back("MULT"); }   //TEMP: TODO
-	| DIV  { $$.code.push_back("DIV"); }
-	| MOD { $$.code.push_back("MOD"); }
-	;
+mulop:
+    MULT { $$ = "*"; }
+	| DIV  { $$ = "/"; }
+	| MOD { $$ = "%"; }
+;
 
 term:
 
@@ -535,21 +561,62 @@ term:
         $$.code.push_back("= " + $$.reg_name + ", " + $1.reg_name);
 
     }
-	| SUB var { debug_print("term -> SUB var\n"); }
+	| SUB var {
+
+        debug_print("term -> SUB var\n");
+
+        $$ = $2;
+
+
+
+        std::string twoTemp = generateTempReg();
+        $$.code.push_back(". " + twoTemp);
+        $$.code.push_back("= " + twoTemp + ", " + "2");
+
+        std::string doubleTemp = generateTempReg();
+        $$.code.push_back(". " + doubleTemp);
+        $$.code.push_back("= " + doubleTemp + ", " + $2.reg_name);
+
+        // Right now the var is in doubleTemp,
+        // and 2 is in twoTemp
+
+        // doubleTemp *= 2
+        $$.code.push_back("* " + doubleTemp + ", " + doubleTemp + ", " + twoTemp);
+
+        // Give $$ its own copy of the original var
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("= " + $$.reg_name + ", " + $2.reg_name);
+
+        // Now, do $$ -= doubleTemp
+        $$.code.push_back("- " + $$.reg_name + ", " + $$.reg_name + ", " + doubleTemp);
+
+
+
+        // $$.code.push_back("* " + $$.reg_name + ", " + $2.reg_name + ", " + negTemp);
+
+        // $$.reg_name = generateTempReg();
+        // $$.code.push_back(". " + $$.reg_name);
+        // $$.code.push_back("= " + $$.reg_name + ", " + $2.reg_name);
+
+        // $$ = $2;
+        // $$.reg_name = generateTempReg();
+        // $$.code.push_back(". " + $$.reg_name);
+        // $$.code.push_back("* " + $2.reg_name + ", " + $2.reg_name + ", " + "-1");
+        // $$.code.push_back("= " + $$.reg_name + ", " + $2.reg_name);
+
+    }
 	| NUMBER {
 
         debug_print_int("term -> NUMBER %d\n", $1);
 
-        std::cout << "In term -> NUMBER" << std::endl;
-
-        ExprStruct es;
-        es.reg_name = generateTempReg();
-        es.code.push_back(". " + es.reg_name);
-        es.code.push_back("= " + es.reg_name + ", " + std::to_string($1));
-
+        //ExprStruct es;
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("= " + $$.reg_name + ", " + std::to_string($1));
         // $$.code.insert($$.code.end(), es.code.begin(), es.code.end());
         // $$.reg_name = es.reg_name;
-        $$ = es;
+        //$$ = es;
     }
 	| SUB NUMBER { debug_print_int("term -> SUB NUMBER %d\n", $2); }
 	| L_PAREN expression R_PAREN { debug_print("term -> L_PAREN expression R_PAREN\n"); }
@@ -699,6 +766,19 @@ std::ostream& operator <<(std::ostream& out, const std::vector< ExprStruct > & p
 
         out << thisExpr << std::endl;
     }
+
+    return out;
+}
+
+
+std::ostream& operator <<(std::ostream& out, const std::vector< std::string> & printMe) {
+
+    for (std::string thisStr : printMe) {
+
+        out << thisStr << std::endl;
+    } 
+
+    return out;
 }
 
 std::string generateTempReg() {
