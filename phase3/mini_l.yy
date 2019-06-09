@@ -59,7 +59,7 @@
 
     public:
 
-        std::string original_name;
+        // std::string original_name;
         std::string reg_name;
         std::vector < std::string > code;
 
@@ -381,7 +381,8 @@ statement:
         // ExprStruct es;
         // es.reg_name = generateTempReg();
         $$.code.insert($$.code.end(), $3.code.begin(), $3.code.end());
-        $$.code.push_back("= " + $1.original_name + ", " + $3.reg_name);
+        // $$.code.push_back(". " + $1.reg_name);
+        $$.code.push_back("= " + $1.reg_name + ", " + $3.reg_name);
         // $$ = es;
     }
 
@@ -425,7 +426,8 @@ statement:
             //this_expr_struct.reg_name = 
 
             //$$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
-            $$.code.push_back(".< " + this_expr_struct.original_name);
+            // $$.code.push_back(".< " + this_expr_struct.original_name);
+            $$.code.push_back(".< " + this_expr_struct.reg_name);
         }
     }
 
@@ -436,7 +438,8 @@ statement:
 
         for (ExprStruct this_expr_struct : $2) {
             //$$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
-            $$.code.push_back(".> " + this_expr_struct.original_name);
+            // $$.code.push_back(".> " + this_expr_struct.original_name);
+            $$.code.push_back(".< " + this_expr_struct.reg_name);
         }
     }
 
@@ -489,8 +492,16 @@ comp:		  EQ { debug_print("comp -> EQ\n"); }
 expression: 
     mult_expr { debug_print("expression -> mult_expr\n"); 
         $$ = $1;
+        //$$.code.push_back("= " + $$.reg_name + ", " + $1.reg_name);
     }
     | expression ADD mult_expr { debug_print("expression -> expression ADD mult_expr\n"); 
+
+        $$ = $1;
+        $$.reg_name = generateTempReg();
+        // $$.code.insert($$.code.end(), $1.code.begin(), $1.code.end());
+        $$.code.insert($$.code.end(), $3.code.begin(), $3.code.end());
+        $$.code.push_back("+ " + $$.reg_name + ", " + $1.reg_name + ", " + $3.reg_name);
+
 
     }
     | expression SUB mult_expr { debug_print("expression -> expression SUB mult_expr\n"); }
@@ -516,19 +527,28 @@ mulop: 	  MULT { $$.code.push_back("MULT"); }   //TEMP: TODO
 term:
 
     var {
+
         debug_print("term -> var\n"); 
         $$ = $1;
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("= " + $$.reg_name + ", " + $1.reg_name);
+
     }
 	| SUB var { debug_print("term -> SUB var\n"); }
 	| NUMBER {
 
         debug_print_int("term -> NUMBER %d\n", $1);
 
+        std::cout << "In term -> NUMBER" << std::endl;
+
         ExprStruct es;
         es.reg_name = generateTempReg();
         es.code.push_back(". " + es.reg_name);
         es.code.push_back("= " + es.reg_name + ", " + std::to_string($1));
 
+        // $$.code.insert($$.code.end(), es.code.begin(), es.code.end());
+        // $$.reg_name = es.reg_name;
         $$ = es;
     }
 	| SUB NUMBER { debug_print_int("term -> SUB NUMBER %d\n", $2); }
@@ -580,9 +600,9 @@ var:
         }
 
         ExprStruct es;
-        es.original_name = $1;
-        es.reg_name = generateTempReg();
-        es.code.push_back(". " + es.reg_name);
+        es.reg_name = $1;
+        // es.code.push_back(". " + $1);
+
         $$ = es;
     }
 
@@ -592,7 +612,7 @@ var:
 
         // $$ = ".[] " + $1 + ", " + $3;
         ExprStruct es;
-        es.original_name = $1;
+        // es.original_name = $1;
         es.code.push_back(".[] " + $1 + ", " + $3.reg_name);
         es.reg_name = generateTempReg();
 
