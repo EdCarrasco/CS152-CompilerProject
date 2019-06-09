@@ -378,10 +378,11 @@ statement:
 
     var ASSIGN expression {
         debug_print("statement -> var ASSIGN expression\n"); 
-        ExprStruct es;
-        es.reg_name = generateTempReg();
-        es.code.insert(es.code.end(), $3.code.begin(), $3.code.end());
-        $$ = es;
+        // ExprStruct es;
+        // es.reg_name = generateTempReg();
+        $$.code.insert($$.code.end(), $3.code.begin(), $3.code.end());
+        $$.code.push_back("= " + $1.original_name + ", " + $3.reg_name);
+        // $$ = es;
     }
 
 	| IF bool_expr THEN statement_loop ENDIF {
@@ -496,7 +497,7 @@ expression:
 ;
 
 mult_expr:
-  
+
     term {
         debug_print("mult_expr -> term\n"); 
         $$ = $1;
@@ -519,7 +520,17 @@ term:
         $$ = $1;
     }
 	| SUB var { debug_print("term -> SUB var\n"); }
-	| NUMBER { debug_print_int("term -> NUMBER %d\n", $1); }
+	| NUMBER {
+
+        debug_print_int("term -> NUMBER %d\n", $1);
+
+        ExprStruct es;
+        es.reg_name = generateTempReg();
+        es.code.push_back(". " + es.reg_name);
+        es.code.push_back("= " + es.reg_name + ", " + std::to_string($1));
+
+        $$ = es;
+    }
 	| SUB NUMBER { debug_print_int("term -> SUB NUMBER %d\n", $2); }
 	| L_PAREN expression R_PAREN { debug_print("term -> L_PAREN expression R_PAREN\n"); }
 	| SUB L_PAREN expression R_PAREN { debug_print("term -> SUB L_PAREN expression R_PAREN\n"); }
