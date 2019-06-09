@@ -8,15 +8,35 @@ beginlocals
     b : array[69] of integer;
 endlocals
 beginbody
-##    i := 5;
+
 ##    i := 5;
 ##   read i, j;
 ##    m := i + 2;
 ##    n := 3 * 5 / 3;
-    
-    i := 3;
-    j := -i + 3;
-    write j;
+##    i := -3;
+##    j := i + 11;
+
+    i := 5;
+    while i > 0
+    beginloop
+        
+        j := 5; 
+
+        while j > 0
+        beginloop
+           j := j - 1;
+           write j;
+        endloop;
+
+        i := i - 1;
+
+        write i;
+    endloop;
+    ## j := 10;
+    ## j := j - i;
+    ## write j;
+
+##    write j;
 ##    write m;
 endbody
 
