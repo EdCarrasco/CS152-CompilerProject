@@ -16,34 +16,86 @@
 	 * add more header file if you need more
 	 */
 
+    #include <iostream>
+    #include <list>
+    #include <string>
+    #include <functional>
+    #include <vector>
+    #include <stdlib.h>
+    #include <stdio.h>
+    #include <tuple>
+    #include <utility>
 
-#include <list>
-#include <string>
-#include <functional>
-#include <vector>
-#include <stdlib.h>
-#include <stdio.h>
-#include <tuple>
-#include <utility>
+    #ifndef FOO
+    #define FOO
 
-#ifndef FOO
-#define FOO
+    #define debug false
 
-#define debug true
+    void debug_print(std::string msg);
+    void debug_print_char(std::string msg, std::string c);
+    void debug_print_int(std::string msg, int i);
 
-void debug_print(std::string msg);
-void debug_print_char(std::string msg, std::string c);
-void debug_print_int(std::string msg, int i);
+    std::string concat(std::vector<std::string> strings, std::string prefix, std::string delim);
 
-std::string concat(std::vector<std::string> strings, std::string prefix, std::string delim);
+    enum IdentType {
 
+        INTEGER,
+        ARRAY,
+        FUNCTION
+    };
 
+    void populateKeywords();
+
+    bool isKeyword(std::string str);
+
+    bool isInSymbolTable(std::string name);
+
+    bool checkIdType(std::string id, IdentType type);
+
+    std::string generateTempReg();
+    std::string generateTempLabel();
+
+    struct ExprStruct {
+
+    public:
+
+        std::string reg_name;
+        std::vector < std::string > code;
+
+        // ~ExprStruct() {}
+
+        // ExprStruct& operator =(const ExprStruct& other) {
+
+        //     this->reg_name = other.reg_name;
+        //     this->code.insert(this->code.end(), other.code.begin(), other.code.end());
+        // }
+
+        friend std::ostream& operator <<(std::ostream& out, const ExprStruct& printMe) {
+
+            for (std::string thisLineOfCode : printMe.code)
+                out << thisLineOfCode << std::endl;
+
+            return out;
+        }
+    };
+
+    struct CtrlStatementStruct {
+
+    public:
+
+        std::string begin_label;
+        std::string end_label;
+
+        std::vector < std::string > code;
+    };
+
+    std::ostream& operator <<(std::ostream& out, const std::vector< ExprStruct > & printMe);
 
 	/* define the sturctures using as types for non-terminals */
 
 	/* end the structures for non-terminal types */
 
-#endif // FOO
+    #endif // FOO
 
 }
 
@@ -51,99 +103,34 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
 
 %code
 {
-#include "parser.tab.hh"
+    #include "parser.tab.hh"
 
-	/* you may need these deader files 
-	 * add more header file if you need more
-	 */
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <map>
-#include <regex>
-#include <set>
-#include <algorithm>
-#include <climits>
-#include <unordered_set>
+    	/* you may need these deader files 
+    	 * add more header file if you need more
+    	 */
+    #include <iostream>
+    #include <sstream>
+    #include <string>
+    #include <map>
+    #include <regex>
+    #include <set>
+    #include <algorithm>
+    #include <climits>
+    #include <unordered_set>
 
-//extern yy::location loc;
+    //extern yy::location loc;
 
-yy::parser::symbol_type yylex();
+    yy::parser::symbol_type yylex();
 
-	/* define your symbol table, global variables,
-	 * list of keywords or any function you may need here */
-	
-    class Ident {
+    	/* define your symbol table, global variables,
+    	 * list of keywords or any function you may need here */
+    	
+    enum IdentType;
 
-    public:
-    
-        Ident(std::string str, int value = 0, bool isArray=false) :
-            str(str), int_value(value), id(static_id++),
-            tempName("__temp__" + std::to_string(id)),
-            isArray(isArray) {}
-
-        friend std::ostream& operator <<(std::ostream& out, const Ident &id) {
-
-            out << "Identifier \"" << id.str << "\",";
-
-            out << "Int value: ";
-            int i = id.int_value;
-            if (i == INT_MAX)
-                out << "UNDEFINED";
-            else
-                out << i;
-
-            return out;
-        }
-
-        friend bool operator ==(const Ident& lhs, const Ident& rhs) {
-
-            // Test for equivalence
-            return lhs.getIdentifier() == rhs.getIdentifier();
-        }
-
-        std::string getIdentifier() const {
-
-            return str;
-        }
-
-        
-        std::string getTempName() const {
-
-            return tempName;
-        }
-
-    private:
-
-        static int static_id;
-
-        const std::string tempName;
-        std::string str;
-        int int_value;
-        int id;
-        const bool isArray;
-        
-    };
-
-    bool containsIdentifierName(const std::string& name);
-
-    bool containsIdentifier(const Ident& ident);
-
-    bool containsFuncName(const std::string& funcName);
-
-    std::vector < Ident > variables;                        // string is variable name
-    std::vector < std::string > function_names;             // string is function name
+    std::map< std::string, IdentType > symbol_table;
     std::unordered_set < std::string > keywords;            // reserved keywords
 
-    void populateKeywords();
-
     bool errorOccurred = false;
-    bool currentlyInLoop = false;
-    bool isDeclaringArray = false;
-
-    bool isKeyword(std::string);
-
-
 
 	/* end of your code */
 }
@@ -161,8 +148,9 @@ yy::parser::symbol_type yylex();
 %token <std::string> IDENTIFIER
 %token <int> NUMBER
 
-%type  <std::string> program function declaration mulop statement var expression
-%type  <std::vector<std::string>> id_loop statement_loop declaration_loop var_loop
+%type  <ExprStruct> program function declaration mulop statement var expression term mult_expr
+%type  <std::vector<ExprStruct>> statement_loop declaration_loop var_loop
+%type  <std::vector<std::string>> id_loop
 
 
 %right ASSIGN
@@ -189,14 +177,13 @@ prog_start:
 
     { populateKeywords(); } program {
 
-        std::cout << (errorOccurred ? "" : $2);
+        if (!errorOccurred)
+            std::cout << $2;
 
         // Print error if there isn't a main function
-        //if (var_contains_str_only("main")) {
-        if (!containsFuncName("main")) {
+        if (!checkIdType("main", IdentType::FUNCTION)) {
 
             yy::parser::error(@2, "No main function defined");
-            //std::cerr << "Error - no main function found" << std::endl;
         }            
     }
 ;
@@ -205,46 +192,68 @@ program:
 
     /*epsilon*/ %empty {
 
-        debug_print("program -> epsilon\n"); $$ = "";
+        debug_print("program -> epsilon\n");
     }
 
     | program function {
         debug_print("program -> program function\n");
-        $$ = $1 + $2;
 
-
+        $$.code.insert($$.code.end(), $1.code.begin(), $1.code.end());
+        $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end());
     }
 ;
 
-function:   FUNCTION IDENTIFIER { 
+function:   
+    FUNCTION IDENTIFIER { 
 
-                function_names.push_back($2); 
-                if (isKeyword($2)) { 
-                    yy::parser::error(@2, "Function name \"" + $2 + "\" cannot be named the same as a keyword.");
-                }
+        std::string function_name = $2;
+        symbol_table.insert( std::pair<std::string, IdentType>(function_name, IdentType::FUNCTION) );
 
-        } SEMICOLON
-            BEGINPARAMS declaration_loop ENDPARAMS
-            BEGINLOCALS declaration_loop ENDLOCALS
-            BEGINBODY statement_loop ENDBODY {
+        if (isKeyword(function_name)) { 
+
+            yy::parser::error(@2, "Function name \"" + function_name + "\" cannot be named the same as a keyword.");
+        }
+
+    } SEMICOLON
+    BEGINPARAMS declaration_loop ENDPARAMS
+    BEGINLOCALS declaration_loop ENDLOCALS
+    BEGINBODY statement_loop ENDBODY {
 
         debug_print_char("function -> FUNCTION IDENTIFIER %s SEMICOLON ", $2);
         debug_print("BEGINPARAMS declaration_loop ENDPARAMS ");
         debug_print("BEGINLOCALS declaration_loop ENDLOCALS ");
         debug_print("BEGINBODY statement_loop ENDBODY\n");
 
-        $$ = "func " + $2 + "\n";
+        std::string function_name = $2;
+        std::vector< ExprStruct > params = $6;
+        std::vector< ExprStruct > locals = $9;
+        std::vector< ExprStruct > body   = $12;
+
+        //$$ = "func " + function_name + "\n";
+        $$.code.push_back("func " + function_name);
 
         // params declaration loop
-        $$ += concat($6, "", "");
+        // $$.code.insert($$.code.end(), params.begin(), params.end());
+        for (ExprStruct this_expr_struct : params) {
+
+            $$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
+        }
 
         // locals declaration loop
-        $$ += concat($9, "", "");
+        // $$.code.insert($$.code.end(), locals.begin(), locals.end());
+        for (ExprStruct this_expr_struct : locals) {
+
+            $$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
+        }
 
         // body statement loop
-        $$ += concat($12, "", "");
+        // $$.code.insert($$.code.end(), body.begin(), body.end());
+        for (ExprStruct this_expr_struct : body) {
 
-        $$ += "endfunc\n";
+            $$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
+        }
+
+        $$.code.push_back("endfunc");
     }
 ;
 
@@ -260,7 +269,7 @@ declaration_loop:
 
         debug_print("declaration_loop -> declaration_loop declaration SEMICOLON\n");
 
-        $$ = $1;
+        $$.insert($$.end(), $1.begin(), $1.end());
         $$.push_back($2);
     }
 ;
@@ -288,54 +297,56 @@ declaration:
 
         debug_print("declaration -> id_loop COLON INTEGER\n");
 
-        for (std::string thisName : $1) {
+        for (std::string thisId : $1) {
 
-            Ident id(thisName, INT_MAX, false);
+            // Ident id(thisName, INT_MAX, false);
+
 
             // Check if is repeat identifier
-            if (containsIdentifier(id)) {
-
-                yy::parser::error(@1, "Multiple definitions of variable \"" + thisName + "\"");
+            if (isInSymbolTable(thisId)) {
+                yy::parser::error(@1, "Multiple definitions of variable \"" + thisId + "\"");
             }
-
-            // Only account for identifier if it hasn't yet been declared
             else {
+                symbol_table.insert( std::pair<std::string, IdentType>(thisId, IdentType::INTEGER));
 
-                variables.push_back(id);
-                $$ += concat($1, ". ", "\n");
+                ExprStruct expr_struct;
+                expr_struct.code.push_back(". " + thisId);
+                expr_struct.reg_name = thisId;
+             
+                // $$.code.push_back(expr_struct);
+                $$.code.insert($$.code.end(), expr_struct.code.begin(), expr_struct.code.end());
             }
-        }    
+        }
+
+
     }
 
 	| id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
 
         debug_print_int("declaration -> id_loop COLON ARRAY L_SQUARE_BRACKET NUMBER %d R_SQUARE_BRACKET OF INTEGER\n", $5);
 
-        for (std::string thisName : $1) {
-
-            Ident id(thisName, INT_MAX, true);
+        // NEW
+        for (std::string thisId : $1) {
 
             // Check if is repeat identifier
-            if (containsIdentifier(id)) {
-
-                yy::parser::error(@1, "Multiple definitions of variable \"" + thisName + "\"");
+            if (isInSymbolTable(thisId)) {
+                yy::parser::error(@1, "Multiple definitions of variable \"" + thisId + "\"");
             }
-
-            // Only keep track of variable if it is not repeat identifier
-            // To be clear, we can keep track of it even if NUMBER <= 0,
-            // just print out the error underneath.
             else {
+                symbol_table.insert( std::pair<std::string, IdentType>(thisId, IdentType::INTEGER));
 
-                variables.push_back(id);
-                $$ += concat($1,                            // id_loop
-                    ".[] ",                                 // prefix
-                    ", " + std::to_string($5) + "\n");      // postfix, using NUMBER
+                // Generate code for declaring id's in a loop
+                ExprStruct expr_struct;
+                expr_struct.code.push_back(".[] " + thisId + ", " + std::to_string($5));
+                expr_struct.reg_name = thisId;
+
+                // $$.code.push_back(expr_struct);
+                $$.code.insert($$.code.end(), expr_struct.code.begin(), expr_struct.code.end());
             }
 
-            // Log error if number is valid
             if ($5 <= 0) {
 
-                yy::parser::error(@5, "Array \"" + $$ + "\" must be of size greater than zero.");
+                yy::parser::error(@5, "Array \"" + thisId + "\" must be declared with size greater than zero");
             }
         }
     }
@@ -364,7 +375,13 @@ id_loop:
 
 statement:
 
-    var ASSIGN expression { debug_print("statement -> var ASSIGN expression\n"); }
+    var ASSIGN expression {
+        debug_print("statement -> var ASSIGN expression\n"); 
+        ExprStruct es;
+        es.reg_name = generateTempReg();
+        es.code.insert(es.code.end(), $3.code.begin(), $3.code.end());
+        $$ = es;
+    }
 
 	| IF bool_expr THEN statement_loop ENDIF {
 
@@ -391,24 +408,36 @@ statement:
 
 	| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr {
 
-        debug_print("statement -> DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr\n"); }
+        debug_print("statement -> DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr\n");
+    }
 
-		| READ var_loop {
+	| READ var_loop {
 
-            debug_print("statement -> READ var_loop\n");
-            $$ = concat($2, ".< ", "\n");
-            
+        debug_print("statement -> READ var_loop\n");
+
+
+        for (ExprStruct this_expr_struct : $2) {
+            // thisCode.push_back(".< " + this_expr_struct.reg_name);
+
+            $$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
+            $$.code.push_back(".< " + this_expr_struct.reg_name);
         }
+    }
 
-		| WRITE var_loop {
+	| WRITE var_loop {
 
-            debug_print("statement -> WRITE var_loop\n");
-            $$ = concat($2, ".> ", "\n");
+        debug_print("statement -> WRITE var_loop\n");
+        // $$ = concat($2, ".> ", "\n");
+
+        for (ExprStruct this_expr_struct : $2) {
+            $$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
+            $$.code.push_back(".> " + this_expr_struct.reg_name);
         }
+    }
 
-		| CONTINUE { debug_print("statement -> CONTINUE\n"); }
-		| RETURN expression { debug_print("statement -> RETURN expression\n"); }
-		;
+    | CONTINUE { debug_print("statement -> CONTINUE\n"); }
+    | RETURN expression { debug_print("statement -> RETURN expression\n"); }
+;
 
 var_loop:
 
@@ -422,7 +451,7 @@ var_loop:
 	| var_loop COMMA var {
 
         debug_print("var_loop -> var_loop COMMA var\n");
-        $$ = $1;
+        $$.insert($$.end(), $1.begin(), $1.end());
         $$.push_back($3);
     }
 ;
@@ -452,22 +481,27 @@ comp:		  EQ { debug_print("comp -> EQ\n"); }
 		| GTE { debug_print("comp -> GTE\n"); }
 		;
 
-expression: mult_expr { debug_print("expression -> mult_expr\n"); }
-        | expression ADD mult_expr { debug_print("expression -> expression ADD mult_expr\n"); }
-        | expression SUB mult_expr { debug_print("expression -> expression SUB mult_expr\n"); }
-        ;
+expression: 
+    mult_expr { debug_print("expression -> mult_expr\n"); 
+        $$ = $1;
+    }
+    | expression ADD mult_expr { debug_print("expression -> expression ADD mult_expr\n"); }
+    | expression SUB mult_expr { debug_print("expression -> expression SUB mult_expr\n"); }
+;
 
 mult_expr:	  term  { debug_print("mult_expr -> term\n"); }
-        | mult_expr mulop term { debug_print_char("mult_expr -> mult_expr %s term\n", $2); }
+        | mult_expr mulop term { debug_print_char("mult_expr -> mult_expr %s term\n", $2.reg_name); }
         ;
 
-mulop: 	  MULT { $$ = "MULT"; }
-	| DIV  { $$ = "DIV"; }
-	| MOD { $$ = "MOD"; }
+mulop: 	  MULT { $$.code.push_back("MULT"); }   //TEMP: TODO
+	| DIV  { $$.code.push_back("DIV"); }
+	| MOD { $$.code.push_back("MOD"); }
 	;
 
 term:
-    var { debug_print("term -> var\n"); }
+    var { debug_print("term -> var\n"); 
+        $$ = $1;
+    }
 		| SUB var { debug_print("term -> SUB var\n"); }
 		| NUMBER { debug_print_int("term -> NUMBER %d\n", $1); }
 		| SUB NUMBER { debug_print_int("term -> SUB NUMBER %d\n", $2); }
@@ -478,16 +512,29 @@ term:
 
         debug_print_char("term -> IDENTIFIER %s L_PAREN expression_loop R_PAREN\n", $1);
     
-        if (!containsFuncName($1)) {
+        // if (!containsFuncName($1)) {
 
-            yy::parser::error(@1, "Attempted to call undeclared function \"" + $1 + "\"");
+        if (isInSymbolTable($1)) {
+
+            yy::parser::error(@1, "Function \"" + $1 + "\" has not been declared in the current context");
+        }
+        if (!checkIdType($1, IdentType::FUNCTION)) {
+
+            yy::parser::error(@1, "Attempted to call non-function \"" + $1 + "\"");
         }
     }
 ;
 
-expression_loop:    expression { debug_print("expression_loop -> expression"); }
-    | expression_loop COMMA expression { debug_print("expression_loop -> expression_loop COMMA expression"); }
-    ;
+expression_loop:
+
+    expression {
+        debug_print("expression_loop -> expression");
+    }
+
+    | expression_loop COMMA expression {
+        debug_print("expression_loop -> expression_loop COMMA expression");
+    }
+;
 		
 var:
 
@@ -495,25 +542,33 @@ var:
 
         debug_print_char("var -> IDENTIFIER %s\n", $1);
 
-        Ident id($1);
+        if (!isInSymbolTable($1)) {
 
-        // TODO implement
-
-        // Look for p. If it's not contained,
-        // print an error that the variable p does not exist
-        if (!containsIdentifierName(id.getIdentifier())) {
-
-            yy::parser::error(@1, "Variable \"" + $1 + "\" does not exist in the current context.");
+            yy::parser::error(@1, "Attempted to use undeclared variable \"" + $1 + "\".");
         }
 
-        $$ = $1;
+        else if (checkIdType($1, IdentType::ARRAY)) {
+
+            yy::parser::error(@1, "Attempted to use array variable \"" + $1 + "\" as a non-array variable.");
+        }
+
+        ExprStruct es;
+        es.reg_name = generateTempReg();
+        es.code.push_back(". " + es.reg_name);
+        $$ = es;
     }
 
 	| IDENTIFIER L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
 
         debug_print_char("var -> IDENTIFIER %s L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n", $1);
 
-        $$ = ".[] " + $1 + ", " + $3;
+        // $$ = ".[] " + $1 + ", " + $3;
+        ExprStruct es;
+        //es.code = ".[] " + $1 + ", " + $3.reg_name;
+        es.code.push_back(".[] " + $1 + ", " + $3.reg_name);
+        es.reg_name = generateTempReg();
+
+        $$ = es;
     }
 ;
 
@@ -571,37 +626,45 @@ std::string concat(std::vector<std::string> strings, std::string prefix, std::st
 
 }
 
-bool containsIdentifierName(const std::string& name) {
-
-    for (Ident id : variables) {
-
-        if (id.getIdentifier() == name) return true;
-    }
-
-    return false;
-}
-
-
-bool containsIdentifier(const Ident& ident) {
-
-    for (Ident this_id : variables) {
-
-        if (ident == this_id) return true;
-    }
-
-    return false;
-}
-
-bool containsFuncName(const std::string& funcName) {
-
-    return std::find(function_names.begin(), function_names.end(), funcName)
-        != function_names.end();
-}
-
-int Ident::static_id = 0;
+// int Ident::static_id = 0;
 
 bool isKeyword(std::string name) {
     return keywords.find(name) != keywords.end();
+}
+
+bool isInSymbolTable(std::string name) {
+
+    return symbol_table.find(name) != symbol_table.end();
+}
+
+bool checkIdType(std::string id, IdentType type) {
+
+    if (!isInSymbolTable(id)) return false;
+
+    // If you're here, then id is in the symbol table
+    return type == symbol_table.at(id);
+}
+
+std::ostream& operator <<(std::ostream& out, const std::vector< ExprStruct > & printMe) {
+
+    for (ExprStruct thisExpr : printMe) {
+
+        out << thisExpr << std::endl;
+    }
+}
+
+std::string generateTempReg() {
+
+    static int i = 0;
+
+    return "__temp__" + std::to_string(i++);
+}
+
+std::string generateTempLabel() {
+
+    static int i = 0;
+
+    return "__label__" + std::to_string(i++);
 }
 
 void populateKeywords() {
