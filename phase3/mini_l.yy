@@ -59,6 +59,7 @@
 
     public:
 
+        std::string original_name;
         std::string reg_name;
         std::vector < std::string > code;
 
@@ -419,8 +420,11 @@ statement:
         for (ExprStruct this_expr_struct : $2) {
             // thisCode.push_back(".< " + this_expr_struct.reg_name);
 
-            $$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
-            $$.code.push_back(".< " + this_expr_struct.reg_name);
+
+            //this_expr_struct.reg_name = 
+
+            //$$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
+            $$.code.push_back(".< " + this_expr_struct.original_name);
         }
     }
 
@@ -430,8 +434,8 @@ statement:
         // $$ = concat($2, ".> ", "\n");
 
         for (ExprStruct this_expr_struct : $2) {
-            $$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
-            $$.code.push_back(".> " + this_expr_struct.reg_name);
+            //$$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
+            $$.code.push_back(".> " + this_expr_struct.original_name);
         }
     }
 
@@ -485,13 +489,23 @@ expression:
     mult_expr { debug_print("expression -> mult_expr\n"); 
         $$ = $1;
     }
-    | expression ADD mult_expr { debug_print("expression -> expression ADD mult_expr\n"); }
+    | expression ADD mult_expr { debug_print("expression -> expression ADD mult_expr\n"); 
+
+    }
     | expression SUB mult_expr { debug_print("expression -> expression SUB mult_expr\n"); }
 ;
 
-mult_expr:	  term  { debug_print("mult_expr -> term\n"); }
-        | mult_expr mulop term { debug_print_char("mult_expr -> mult_expr %s term\n", $2.reg_name); }
-        ;
+mult_expr:
+  
+    term {
+        debug_print("mult_expr -> term\n"); 
+        $$ = $1;
+    }
+
+    | mult_expr mulop term { debug_print_char("mult_expr -> mult_expr %s term\n", $2.reg_name); 
+
+    }
+;
 
 mulop: 	  MULT { $$.code.push_back("MULT"); }   //TEMP: TODO
 	| DIV  { $$.code.push_back("DIV"); }
@@ -499,15 +513,17 @@ mulop: 	  MULT { $$.code.push_back("MULT"); }   //TEMP: TODO
 	;
 
 term:
-    var { debug_print("term -> var\n"); 
+
+    var {
+        debug_print("term -> var\n"); 
         $$ = $1;
     }
-		| SUB var { debug_print("term -> SUB var\n"); }
-		| NUMBER { debug_print_int("term -> NUMBER %d\n", $1); }
-		| SUB NUMBER { debug_print_int("term -> SUB NUMBER %d\n", $2); }
-		| L_PAREN expression R_PAREN { debug_print("term -> L_PAREN expression R_PAREN\n"); }
-		| SUB L_PAREN expression R_PAREN { debug_print("term -> SUB L_PAREN expression R_PAREN\n"); }
-		| IDENTIFIER L_PAREN R_PAREN { debug_print_char("term -> IDENTIFIER %s L_PAREN R_PAREN\n", $1); }
+	| SUB var { debug_print("term -> SUB var\n"); }
+	| NUMBER { debug_print_int("term -> NUMBER %d\n", $1); }
+	| SUB NUMBER { debug_print_int("term -> SUB NUMBER %d\n", $2); }
+	| L_PAREN expression R_PAREN { debug_print("term -> L_PAREN expression R_PAREN\n"); }
+	| SUB L_PAREN expression R_PAREN { debug_print("term -> SUB L_PAREN expression R_PAREN\n"); }
+	| IDENTIFIER L_PAREN R_PAREN { debug_print_char("term -> IDENTIFIER %s L_PAREN R_PAREN\n", $1); }
 	| IDENTIFIER L_PAREN expression_loop R_PAREN {
 
         debug_print_char("term -> IDENTIFIER %s L_PAREN expression_loop R_PAREN\n", $1);
@@ -553,6 +569,7 @@ var:
         }
 
         ExprStruct es;
+        es.original_name = $1;
         es.reg_name = generateTempReg();
         es.code.push_back(". " + es.reg_name);
         $$ = es;
@@ -564,7 +581,7 @@ var:
 
         // $$ = ".[] " + $1 + ", " + $3;
         ExprStruct es;
-        //es.code = ".[] " + $1 + ", " + $3.reg_name;
+        es.original_name = $1;
         es.code.push_back(".[] " + $1 + ", " + $3.reg_name);
         es.reg_name = generateTempReg();
 
