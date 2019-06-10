@@ -4,39 +4,40 @@ endparams
 beginlocals
     m, n : integer;
     i, j : integer;
+    k : integer;
     a : array[100] of integer;
     b : array[69] of integer;
 endlocals
 beginbody
 
-##    i := 5;
-##   read i, j;
-##    m := i + 2;
-##    n := 3 * 5 / 3;
-##    i := -3;
-##    j := i + 11;
+##  i := 10;
+##  j := 1000;
+##  write i;
 
-    i := 5;
-    while i > 0
+##  while i == -7
+##  beginloop
+##      write i;
+##  endloop;
+
+    while i > -1
     beginloop
-        
-        j := 5; 
 
-        while j > 0
-        beginloop
-           j := j - 1;
-           write j;
-        endloop;
+        i := i + 1;
+        i := i - 2;
 
-        i := i - 1;
+        do
+            beginloop
 
-        write i;
+                j := j + 1;
+
+            endloop
+        while j < 0;
+
+    write i, j;
+
     endloop;
-    ## j := 10;
-    ## j := j - i;
-    ## write j;
 
-##    write j;
-##    write m;
+
+
 endbody
 
