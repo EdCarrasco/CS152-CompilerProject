@@ -10,33 +10,16 @@ beginlocals
 endlocals
 beginbody
 
-##  i := 10;
-##  j := 1000;
-##  write i;
+    i := 1;
+    
+    do
+        beginloop
 
-##  while i == -7
-##  beginloop
-##      write i;
-##  endloop;
+        write i;
+        i := 0;
 
-    while i > -1
-    beginloop
-
-        i := i + 1;
-        i := i - 2;
-
-        do
-            beginloop
-
-                j := j + 1;
-
-            endloop
-        while j < 0;
-
-    write i, j;
-
-    endloop;
-
+        endloop
+    while true;
 
 
 endbody
