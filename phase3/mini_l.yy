@@ -408,7 +408,7 @@ statement:
         // Compute the negation of the result of bool_expr,
         // which is in $2.reg_name
         std::string negation_reg = generateTempReg();
-        $$.code.push_back(". " + negation_reg + " ; negation reg");
+        $$.code.push_back(". " + negation_reg);
         $$.code.push_back("! " + negation_reg + ", " + $2.reg_name);
 
         // If bool_expr is false,
@@ -440,7 +440,7 @@ statement:
         $$.end_label = generateTempLabel();     // end
 
         std::string negation_reg = generateTempReg();
-        $$.code.push_back(". " + negation_reg + " ; negation reg");
+        $$.code.push_back(". " + negation_reg);
         $$.code.push_back("! " + negation_reg + ", " + $2.reg_name);
 
         // If !bool_expr, jump to else
@@ -453,16 +453,16 @@ statement:
         }
 
         // Jump to end to avoid else statement
-        $$.code.push_back(":= " + $$.end_label + " ; end of if, jump to end");
+        $$.code.push_back(":= " + $$.end_label /*+ " ; end of if, jump to end"*/);
 
-        $$.code.push_back(": " + $$.begin_label + " ; else label");
+        $$.code.push_back(": " + $$.begin_label /*+ " ; else label"*/);
 
         for (StatementStruct thisStatement : $6) {
 
             $$.code.insert($$.code.end(), thisStatement.code.begin(), thisStatement.code.end());
         }
 
-        $$.code.push_back(": " + $$.end_label + " ; endif label");
+        $$.code.push_back(": " + $$.end_label /*+ " ; endif label"*/);
 
     }
 
@@ -800,8 +800,30 @@ term:
         $$.code.push_back("- " + $$.reg_name + ", 0, " + number_es.reg_name);
 
     }
-	| L_PAREN expression R_PAREN { debug_print("term -> L_PAREN expression R_PAREN\n"); }
-	| SUB L_PAREN expression R_PAREN { debug_print("term -> SUB L_PAREN expression R_PAREN\n"); }
+	| L_PAREN expression R_PAREN {
+
+        debug_print("term -> L_PAREN expression R_PAREN\n");
+
+        $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end());
+
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("= " + $$.reg_name + ", " + $2.reg_name);
+
+    }
+
+	| SUB L_PAREN expression R_PAREN {
+
+        debug_print("term -> SUB L_PAREN expression R_PAREN\n");
+
+        $$.code.insert($$.code.end(), $3.code.begin(), $3.code.end());
+
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("= " + $$.reg_name + ", " + $3.reg_name);
+        $$.code.push_back("- " + $$.reg_name + ", 0, " + $$.reg_name);
+
+    }
 	| IDENTIFIER L_PAREN R_PAREN { debug_print_char("term -> IDENTIFIER %s L_PAREN R_PAREN\n", $1); }
 	| IDENTIFIER L_PAREN expression_loop R_PAREN {
 
