@@ -10,18 +10,39 @@ beginlocals
 endlocals
 beginbody
 
-    read i;
+    i := 0;
 
-    if (i == 69) then
-
-        while true
+    do
         beginloop
-            write i;
-        endloop;
-    else
-        i := 0;
-        write i;
-    endif;
+
+            i := i + 1;
+
+            if (i < 5) then
+                continue; 
+            else
+                write i;
+            endif;
+
+        endloop
+    while i < 10;
+
+##  while i < 10
+##  beginloop
+
+##          i := i + 1;
+
+##          if (i > 5) then
+##              continue; 
+##          else
+##              write i;
+##          endif;
+
+##  endloop;
+
+##  continue;
+
+    j := 69;
+    write j;
 
 
 endbody
