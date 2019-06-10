@@ -543,7 +543,9 @@ relation_and_expr:
 ;
 
 relation_expr:
+
     expression comp expression {
+
         debug_print("relation_expr -> expression comp expression\n");
 
         $$.code.insert($$.code.end(), $1.code.begin(), $1.code.end());
@@ -555,26 +557,61 @@ relation_expr:
         $$.code.push_back($2 + " " + $$.reg_name + ", " + $1.reg_name + ", " + $3.reg_name);
 
     }
-	| NOT expression comp expression { 
+
+	| NOT expression comp expression {
+
         debug_print("relation_expr -> NOT expression comp expression\n");
 
+        $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end());
+        $$.code.insert($$.code.end(), $4.code.begin(), $4.code.end());
+
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+
+        $$.code.push_back($3 + " " + $$.reg_name + ", " + $2.reg_name + ", " + $4.reg_name);
+
+        $$.code.push_back("! " + $$.reg_name + ", " + $$.reg_name);
     }
+
 	| TRUE { 
-        debug_print("relation_expr -> TRUE\n"); }
+
+        debug_print("relation_expr -> TRUE\n");
+
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+
+        $$.code.push_back("= " + $$.reg_name + ", 1");
+    }
 	| NOT TRUE { debug_print("relation_expr -> NOT TRUE\n"); 
 
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+
+        $$.code.push_back("= " + $$.reg_name + ", 0");
     }
 	| FALSE { 
         debug_print("relation_expr -> FALSE\n"); 
 
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+
+        $$.code.push_back("= " + $$.reg_name + ", 0");
     }
 	| NOT FALSE { 
         debug_print("relation_expr -> NOT FALSE\n"); 
 
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+
+        $$.code.push_back("= " + $$.reg_name + ", 1");
     }
 	| L_PAREN bool_expr R_PAREN { 
         debug_print("relation_expr -> L_PAREN bool_expr R_PAREN\n"); 
 
+        $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end());
+
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
     }
 ;
 
@@ -693,10 +730,8 @@ term:
         $$.reg_name = generateTempReg();
         $$.code.push_back(". " + $$.reg_name);
         $$.code.push_back("= " + $$.reg_name + ", " + std::to_string($1));
-        // $$.code.insert($$.code.end(), es.code.begin(), es.code.end());
-        // $$.reg_name = es.reg_name;
-        //$$ = es;
     }
+
 	| SUB NUMBER { 
         debug_print_int("term -> SUB NUMBER %d\n", $2); 
 
@@ -706,12 +741,6 @@ term:
         number_es.reg_name = generateTempReg();
         $$.code.push_back(". " + number_es.reg_name);
         $$.code.push_back("= " + number_es.reg_name + ", " + std::to_string($2));
-
-        // Name a temp for 0, and declare it
-        // ExprStruct zero_es;
-        // zero_es.reg_name = generateTempReg();
-        // $$.code.push_back(". " + zero_es.reg_name);
-        // $$.code.push_back("= " + zero_es.reg_name + ", 0");
 
         // Put the result for 0 - number_es.reg_name into $$
         $$.reg_name = generateTempReg();
