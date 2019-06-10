@@ -1,3 +1,24 @@
+function get_double;
+beginparams
+    doubleMe : integer;
+endparams
+beginlocals
+endlocals
+beginbody
+    return 2 * doubleMe;
+endbody
+
+function get_sixtynine;
+beginparams
+endparams
+beginlocals
+    sn : integer;
+endlocals
+beginbody
+    sn := 69;
+    return sn;
+endbody
+
 function main;
 beginparams
 endparams
@@ -10,39 +31,14 @@ beginlocals
 endlocals
 beginbody
 
-    i := 0;
+    i := 7;
+    write i;
 
-    do
-        beginloop
+    i := get_sixtynine();
+    write i;
 
-            i := i + 1;
-
-            if (i < 5) then
-                continue; 
-            else
-                write i;
-            endif;
-
-        endloop
-    while i < 10;
-
-##  while i < 10
-##  beginloop
-
-##          i := i + 1;
-
-##          if (i > 5) then
-##              continue; 
-##          else
-##              write i;
-##          endif;
-
-##  endloop;
-
-##  continue;
-
-    j := 69;
-    write j;
+    i := get_double(i);
+    write i;
 
 
 endbody
