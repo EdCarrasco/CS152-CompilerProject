@@ -93,7 +93,10 @@
     std::ostream& operator <<(std::ostream& out, const std::vector< ExprStruct > & printMe);
 
     std::ostream& operator <<(std::ostream& out, const std::vector< std::string> & printMe);
-	/* define the sturctures using as types for non-terminals */
+
+
+
+	/* define the stuctures using as types for non-terminals */
 
 	/* end the structures for non-terminal types */
 
@@ -119,6 +122,7 @@
     #include <algorithm>
     #include <climits>
     #include <unordered_set>
+    #include <stack>
 
     //extern yy::location loc;
 
@@ -131,9 +135,11 @@
 
     std::map< std::string, IdentType > symbol_table;
     std::unordered_set < std::string > keywords;            // reserved keywords
+    std::stack <std::string> loop_scope;
 
     bool errorOccurred = false;
 
+    
 	/* end of your code */
 }
 
@@ -411,8 +417,9 @@ statement:
         $$.code.push_back(". " + negation_reg);
         $$.code.push_back("! " + negation_reg + ", " + $2.reg_name);
 
-        // If bool_expr is false,
-        // jump to endif label
+        // If negation_neg is true,
+        // then bool_expr was false,
+        // so jump to endif label
         $$.code.push_back("?:= " + endif_label + ", " + negation_reg);
 
         // Else if !negation_reg, then bool_expr was true,
@@ -422,7 +429,7 @@ statement:
             $$.code.insert($$.code.end(), thisStatement.code.begin(), thisStatement.code.end());
         }
 
-        // After we're done, append the endif label
+        // After we're done with body code, append the endif label
         $$.code.push_back(": " + endif_label);
         
     
@@ -466,12 +473,13 @@ statement:
 
     }
 
-	| WHILE bool_expr BEGINLOOP statement_loop ENDLOOP {
+	| WHILE bool_expr BEGINLOOP {loop_scope.push(generateTempLabel());} statement_loop ENDLOOP {
 
         debug_print("statement -> WHILE bool_expr BEGINLOOP statement_loop ENDLOOP\n");
 
         StatementStruct css;
-        css.begin_label = generateTempLabel();
+        assert(!loop_scope.empty());
+        css.begin_label = loop_scope.top();
         std::string middle_label = generateTempLabel();
         css.end_label = generateTempLabel();
 
@@ -486,7 +494,7 @@ statement:
 
 
 
-        for (StatementStruct thisStatement : $4) {
+        for (StatementStruct thisStatement : $5) {
 
             $$.code.insert($$.code.end(), thisStatement.code.begin(), thisStatement.code.end());
         }
@@ -498,24 +506,38 @@ statement:
         $$.begin_label = css.begin_label;
         $$.end_label = css.end_label;
 
+        loop_scope.pop();
+
     }
 
-	| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr {
+	| DO BEGINLOOP { loop_scope.push(generateTempLabel()); } statement_loop ENDLOOP WHILE bool_expr {
 
         debug_print("statement -> DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr\n");
 
         StatementStruct ss;
+        // ss.begin_label = generateTempLabel();
+        assert(!loop_scope.empty());
+        ss.end_label = loop_scope.top();
         ss.begin_label = generateTempLabel();
+
         $$.code.push_back(": " + ss.begin_label);
 
-        for (StatementStruct thisStatement : $3) {
+        // code from statement_loop
+        for (StatementStruct thisStatement : $4) {
 
             $$.code.insert($$.code.end(), thisStatement.code.begin(), thisStatement.code.end());
-
         }
 
-        $$.code.insert($$.code.end(), $6.code.begin(), $6.code.end());
-        $$.code.push_back("?:= " + ss.begin_label + ", " + $6.reg_name);
+        // set end_label to be between end of body code and before bool_expr
+        $$.code.push_back(": " + ss.end_label);
+
+        // code from bool_expr
+        $$.code.insert($$.code.end(), $7.code.begin(), $7.code.end());
+
+        // if bool_expr, jump to ss.begin_label
+        $$.code.push_back("?:= " + ss.begin_label + ", " + $7.reg_name);
+
+        loop_scope.pop();
 
     }
 
@@ -548,7 +570,24 @@ statement:
         }
     }
 
-    | CONTINUE { debug_print("statement -> CONTINUE\n"); }
+    | CONTINUE {
+
+        debug_print("statement -> CONTINUE\n");
+
+        // std::cout << "loop_scope size: " << loop_scope.size() << std::endl;
+
+        if (loop_scope.empty()) {
+
+            yy::parser::error(@1, "\'continue\' keyword forbidden outside loops");
+        }
+
+        else {
+
+            std::string jump_here = loop_scope.top();
+            $$.code.push_back(":= " + jump_here);
+        }
+    }
+
     | RETURN expression { debug_print("statement -> RETURN expression\n"); }
 ;
 
@@ -610,6 +649,8 @@ relation_expr:
     }
 
 	| NOT expression comp expression {
+
+        std::cout << "In relation_expr -> NOT expression comp expression" << std::endl;
 
         debug_print("relation_expr -> NOT expression comp expression\n");
 
@@ -890,16 +931,6 @@ var:
     }
 ;
 
-/*
-inc_scope: %empty {
-
-    scope++; 
-    maxScope = (scope > maxScope ? scope : maxScope);
-    }
-;
-
-dec_scope: %empty { scope--; } ;
-*/
 
 // going_into_loop: %empty { currentlyInLoop = true; }
 // returning_from_loop: %empty { currentlyInLoop = false; }
