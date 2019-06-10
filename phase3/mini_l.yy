@@ -452,6 +452,20 @@ statement:
 	| DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr {
 
         debug_print("statement -> DO BEGINLOOP statement_loop ENDLOOP WHILE bool_expr\n");
+
+        StatementStruct ss;
+        ss.begin_label = generateTempLabel();
+        $$.code.push_back(": " + ss.begin_label);
+
+        for (StatementStruct thisStatement : $3) {
+
+            $$.code.insert($$.code.end(), thisStatement.code.begin(), thisStatement.code.end());
+
+        }
+
+        $$.code.insert($$.code.end(), $6.code.begin(), $6.code.end());
+        $$.code.push_back("?:= " + ss.begin_label + ", " + $6.reg_name);
+
     }
 
 	| READ var_loop {
@@ -685,6 +699,24 @@ term:
     }
 	| SUB NUMBER { 
         debug_print_int("term -> SUB NUMBER %d\n", $2); 
+
+        ExprStruct number_es;
+
+        // Give number_es.reg_name a register and declare it
+        number_es.reg_name = generateTempReg();
+        $$.code.push_back(". " + number_es.reg_name);
+        $$.code.push_back("= " + number_es.reg_name + ", " + std::to_string($2));
+
+        // Name a temp for 0, and declare it
+        // ExprStruct zero_es;
+        // zero_es.reg_name = generateTempReg();
+        // $$.code.push_back(". " + zero_es.reg_name);
+        // $$.code.push_back("= " + zero_es.reg_name + ", 0");
+
+        // Put the result for 0 - number_es.reg_name into $$
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("- " + $$.reg_name + ", 0, " + number_es.reg_name);
 
     }
 	| L_PAREN expression R_PAREN { debug_print("term -> L_PAREN expression R_PAREN\n"); }
