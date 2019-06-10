@@ -400,7 +400,7 @@ statement:
         // and define your own reg_name
         $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end());
         $$.begin_label = generateTempReg();
-        $$.code.push_back(". " + $$.begin_label + " ; statement.begin_label");
+        $$.code.push_back(". " + $$.begin_label);
 
         // Prepare the endif label
         std::string endif_label = generateTempLabel();
@@ -432,14 +432,37 @@ statement:
 
         debug_print("statement -> IF bool_expr THEN statement_loop ELSE statement_loop ENDIF\n");
 
-        /*
+        // Copy code for evaluating bool_expr
         $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end());
-        $$.reg_name = generateTempReg();
 
-        std::string endif_label = generateTempLabel();
+        // Need 2 labels, else and end
+        $$.begin_label = generateTempLabel();   // else
+        $$.end_label = generateTempLabel();     // end
 
-        $$.code.push_back(": " + endif_label);
-        */
+        std::string negation_reg = generateTempReg();
+        $$.code.push_back(". " + negation_reg + " ; negation reg");
+        $$.code.push_back("! " + negation_reg + ", " + $2.reg_name);
+
+        // If !bool_expr, jump to else
+        $$.code.push_back("?:= " + $$.begin_label + ", " + negation_reg);
+
+        // Fall through to code from statement loop
+        for (StatementStruct thisStatement : $4) {
+
+            $$.code.insert($$.code.end(), thisStatement.code.begin(), thisStatement.code.end());
+        }
+
+        // Jump to end to avoid else statement
+        $$.code.push_back(":= " + $$.end_label + " ; end of if, jump to end");
+
+        $$.code.push_back(": " + $$.begin_label + " ; else label");
+
+        for (StatementStruct thisStatement : $6) {
+
+            $$.code.insert($$.code.end(), thisStatement.code.begin(), thisStatement.code.end());
+        }
+
+        $$.code.push_back(": " + $$.end_label + " ; endif label");
 
     }
 
