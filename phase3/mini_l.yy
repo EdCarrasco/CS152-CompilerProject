@@ -396,6 +396,34 @@ statement:
 
         debug_print("statement -> IF bool_expr THEN statement_loop ENDIF\n");
 
+        // Before anything else, copy code from bool_expr,
+        // and define your own reg_name
+        $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end());
+        $$.begin_label = generateTempReg();
+        $$.code.push_back(". " + $$.begin_label + " ; statement.begin_label");
+
+        // Prepare the endif label
+        std::string endif_label = generateTempLabel();
+
+        // Compute the negation of the result of bool_expr,
+        // which is in $2.reg_name
+        std::string negation_reg = generateTempReg();
+        $$.code.push_back(". " + negation_reg + " ; negation reg");
+        $$.code.push_back("! " + negation_reg + ", " + $2.reg_name);
+
+        // If bool_expr is false,
+        // jump to endif label
+        $$.code.push_back("?:= " + endif_label + ", " + negation_reg);
+
+        // Else if !negation_reg, then bool_expr was true,
+        // and you should fall through to the body code
+        for (StatementStruct thisStatement : $4) {
+
+            $$.code.insert($$.code.end(), thisStatement.code.begin(), thisStatement.code.end());
+        }
+
+        // After we're done, append the endif label
+        $$.code.push_back(": " + endif_label);
         
     
     }
@@ -612,6 +640,7 @@ relation_expr:
 
         $$.reg_name = generateTempReg();
         $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("= " + $$.reg_name + ", " + $2.reg_name);
     }
 ;
 
