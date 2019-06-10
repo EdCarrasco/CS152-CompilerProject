@@ -138,6 +138,7 @@
     std::stack <std::string> loop_scope;
 
     bool errorOccurred = false;
+    int paramCount = 0;
 
     
 	/* end of your code */
@@ -156,7 +157,7 @@
 %token <std::string> IDENTIFIER
 %token <int> NUMBER
 
-%type  <std::vector<ExprStruct>> declaration_loop var_loop
+%type  <std::vector<ExprStruct>> declaration_loop var_loop expression_loop
 %type  <ExprStruct> program declaration var expression term mult_expr bool_expr relation_and_expr relation_expr
 
 %type  <std::vector<StatementStruct>> statement_loop
@@ -228,7 +229,7 @@ function:
         }
 
     } SEMICOLON
-    BEGINPARAMS declaration_loop ENDPARAMS
+    BEGINPARAMS declaration_loop ENDPARAMS 
     BEGINLOCALS declaration_loop ENDLOCALS
     BEGINBODY statement_loop ENDBODY {
 
@@ -588,7 +589,16 @@ statement:
         }
     }
 
-    | RETURN expression { debug_print("statement -> RETURN expression\n"); }
+    | RETURN expression {
+
+        debug_print("statement -> RETURN expression\n");
+
+        $$.code.insert($$.code.end(), $2.code.begin(), $2.code.end());
+        // $$.reg_name = $2.reg_name;
+        $$.begin_label = $2.reg_name;
+        $$.code.push_back("ret " + $2.reg_name);
+
+    }
 ;
 
 var_loop:
@@ -865,14 +875,25 @@ term:
         $$.code.push_back("- " + $$.reg_name + ", 0, " + $$.reg_name);
 
     }
-	| IDENTIFIER L_PAREN R_PAREN { debug_print_char("term -> IDENTIFIER %s L_PAREN R_PAREN\n", $1); }
+	| IDENTIFIER L_PAREN R_PAREN {
+
+        debug_print_char("term -> IDENTIFIER %s L_PAREN R_PAREN\n", $1);
+
+        if (!isInSymbolTable($1)) {
+
+            yy::parser::error(@1, "Function \"" + $1 + "\" has not been declared in the current context");
+        }
+
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("call " + $1 + ", " + $$.reg_name);
+    }
+
 	| IDENTIFIER L_PAREN expression_loop R_PAREN {
 
         debug_print_char("term -> IDENTIFIER %s L_PAREN expression_loop R_PAREN\n", $1);
-    
-        // if (!containsFuncName($1)) {
 
-        if (isInSymbolTable($1)) {
+        if (!isInSymbolTable($1)) {
 
             yy::parser::error(@1, "Function \"" + $1 + "\" has not been declared in the current context");
         }
@@ -880,17 +901,44 @@ term:
 
             yy::parser::error(@1, "Attempted to call non-function \"" + $1 + "\"");
         }
+
+        for (ExprStruct this_expr_struct : $3) {
+
+            $$.code.insert($$.code.end(), this_expr_struct.code.begin(), this_expr_struct.code.end());
+            $$.code.push_back("param " + this_expr_struct.reg_name);
+        }
+
+        $$.reg_name = generateTempReg();
+        $$.code.push_back(". " + $$.reg_name);
+        $$.code.push_back("call " + $1 + ", " + $$.reg_name);
+
+        paramCount = 0;
+
     }
 ;
 
 expression_loop:
 
     expression {
+
         debug_print("expression_loop -> expression");
+
+        $1.reg_name = generateTempReg();
+        $1.code.push_back(". " + $1.reg_name);
+        // $1.code.push_back("= " + $1.reg_name + ", $" + paramCount);
+
+        $$.push_back($1);
+
+        paramCount++;
     }
 
     | expression_loop COMMA expression {
+
         debug_print("expression_loop -> expression_loop COMMA expression");
+
+        $$ = $1;
+
+        $$.push_back($3);
     }
 ;
 		
