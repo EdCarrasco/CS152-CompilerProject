@@ -10,16 +10,13 @@ beginlocals
 endlocals
 beginbody
 
-    i := 1;
-    
-    do
-        beginloop
+    i := 88;
+
+    if (i == 89) then
 
         write i;
-        i := 0;
 
-        endloop
-    while true;
+    endif;
 
 
 endbody
